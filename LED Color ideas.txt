@@ -1,0 +1,28 @@
+Robot LED Color Coding Ideas
+No Connection - Flashing Purple
+Upon FMS Connection - Bumpers go Green
+Upon Driver Station Connection - Intake goes green, followed by the whole robot then fading to our alliance color
+
+Autonomous:
+For each individual autonomous mode, have a specific color pattern
+Also show the remaining Autonomous time on the bumper strips, decreasing
+1 Ball Auton - Purple with a single 6 pixel yellow strip in the middle
+2 Ball Normal - Purple with two 6 pixel yellow strips in the middle
+2 Ball Short - Purple with three 6 pixel yellow strips in the middle
+These also need to update continously as they are changed by the driverstation
+
+Teleop:
+idle - Purple Bumpers, Yellow Intake???
+Continous affect - Percentage fill from 0 to max speed, showing the robots current velocity on the bumpers
+On Pickup - Strobe the intake so it has a "pulling" Pattern up its length
+On Shoot - Charge affect, followed by a percentage fill to make it look like it is "Pushing" the balls out
+On Puke - Strobe the intake so it has a "Pushing" Pattern down its length
+On Climb Detect - Something flashy?????? Unknown, possibly something integrating the current alliance color
+
+Other:
+Warning system - Possibly integrating a system to flash colors at ~40 seconds to indicate it is time to climb
+Countdown to match end - Possibly have a countdown visible on the robot as the match is ending, once we have climbed
+On Disable / Match end - Revert to alliance color with sliding purple strips???
+
+This is all feasible, just have to figure out exactly what we want to do
+Would also like to implement fading between every animation, if possible
