@@ -7,6 +7,7 @@ import sys
 import time
 import os
 import numpy as np
+from pygame import PixelArray
 
 PURPLE = (148, 0, 211)
 YELLOW = (255,255,0)

@@ -1,4 +1,5 @@
 import numpy as np
+import random
 
 def fillLEDs(LEDArray, Color1):
     for i in range(len(LEDArray)):
@@ -185,4 +186,11 @@ def fadeBetweenColors(LEDArray, Color1, Color2, percentage):
             LEDArray[i][1] = 0
         if LEDArray[i][2] < 0:
             LEDArray[i][2] = 0
+    pass
+
+def randomStars(LEDArray, color):
+    for i in range(len(LEDArray)):
+        #randomly choose true or false
+        if random.randint(0, 6) == 1:
+            LEDArray[i] = color
     pass
