@@ -16,8 +16,8 @@ NetworkTables.initialize(server=ip)
 # Get the NetworkTables instance
 sd = NetworkTables.getTable("SmartDashboard")
 
-BumperLEDCount = 20
-IntakeLEDCount = 20
+BumperLEDCount = 80
+IntakeLEDCount = 80
 TotalLEDS = (4 * IntakeLEDCount) + (2 * BumperLEDCount)
 # pixels = neopixel.NeoPixel(TotalLEDS)
 
