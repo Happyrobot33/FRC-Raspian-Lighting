@@ -27,10 +27,9 @@ if OnHardware:
 # Setup networktables and logging
 logging.basicConfig(level=logging.DEBUG)
 ip = "10.77.80.71"  # default ip
-#if OnHardware:
-#    ip = "10.36.67.30"
+rioip = "10.36.67.2" #IP of the rio on the robot
 # Initialize NetworkTables
-NetworkTables.initialize(server=ip)
+NetworkTables.initialize(server=rioip)
 # Get the NetworkTables instances
 SD = NetworkTables.getTable("SmartDashboard")
 FMS = NetworkTables.getTable("FMSInfo")
