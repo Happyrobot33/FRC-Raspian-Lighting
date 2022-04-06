@@ -153,11 +153,6 @@ def decodeFMSData():
     IsRed = FMS.getBoolean('IsRed', True)
     pass
 
-# main loop
-FrameCount = 0
-executionTime = 0
-FPS = 0
-
 PREGAME_COUNTER = 0
 INCREMENTING = True
 CAN_TRANSITION = False
@@ -291,13 +286,10 @@ while True:
 #        Patterns.fadeToColor(LeftBumperZone, 255, 0, 0, fadeCounter)
 
     pushLEDs()
-    
-    # calculate the time it took to run the loop in milliseconds
-    executionTime = (time.time() - startTime) * 1000
+
     #ensure the loop runs at 30 fps
-    time.sleep(max(0, 1 / 30 - executionTime / 1000))
+    executionTime = time.time() - startTime
 
-    # calculate the fps
-    FPS = 1 / (time.time() - startTime)
-
-    FrameCount += 1
+    if executionTime < (1.0 / 30.0):
+        print("ms per frame: " + str(executionTime))
+        time.sleep((1.0 / 30.0) - executionTime)
