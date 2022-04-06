@@ -264,27 +264,6 @@ while True:
         AUTONOMOUS()
         VELOCITY_OVERLAY()
 
-
-    #os.system("cls" if os.name == "nt" else "clear")
-    #print the current FPS and ms per frame
-    #print("FPS: " + str(FPS))
-    #print("ms per frame: " + str(executionTime))
-
-    #If enabled flag is set, then fade from the current color to purple on the left bumper zone using fade to color
-#    if Enabled_Flag:
-#        Patterns.fillLEDs(LeftBumperZone, 255, 0, 0)
-#        Patterns.percentageFillLEDs(LeftBumperZone, 0, 255, 0, SD.getNumber("robotTime", -1) / 15)
-#        Patterns.averageLEDsNoWrap(LeftBumperZone, 4)
-#        if SD.getNumber("robotTime", -1) > 15:
-#            fadeCounter += 0.01
-#            Patterns.fadeToColor(LeftBumperZone, 255, 0, 255, fadeCounter)
-#    elif not Enabled_Flag:
-#        print("Disabled", fadeCounter)
-#        if fadeCounter == 1:
-#            fadeCounter = 0
-#        fadeCounter += 0.01
-#        Patterns.fadeToColor(LeftBumperZone, 255, 0, 0, fadeCounter)
-
     pushLEDs()
 
     #ensure the loop runs at 30 fps
