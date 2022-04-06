@@ -6,6 +6,7 @@ import sys
 import time
 import os
 import numpy as np
+import platform
 
 PURPLE = (148, 0, 211)
 YELLOW = (255,255,0)
@@ -18,14 +19,20 @@ WHITE = (255,255,255)
 #Local librarys to contain functions better
 import Patterns
 
-import board
-import neopixel
+#check if this code is running on the a Raspberry Pi
+OnHardware = platform.machine() == 'armv7l' or platform.machine() == 'aarch64' 
+
+if OnHardware:
+    import board
+    import neopixel
 
 # Setup networktables and logging
 logging.basicConfig(level=logging.DEBUG)
 ip = "127.0.0.1"  # default ip
+if OnHardware:
+    ip = "10.36.67.30"
 # Initialize NetworkTables
-NetworkTables.initialize(server="192.168.1.210")
+NetworkTables.initialize(server=ip)
 # Get the NetworkTables instances
 SD = NetworkTables.getTable("SmartDashboard")
 FMS = NetworkTables.getTable("FMSInfo")
@@ -33,7 +40,8 @@ FMS = NetworkTables.getTable("FMSInfo")
 BumperLEDCount = 10
 IntakeLEDCount = 40
 TotalLEDS = (4 * IntakeLEDCount) + (2 * BumperLEDCount)
-pixels = neopixel.NeoPixel(board.D18, TotalLEDS, auto_write=False)
+if OnHardware:
+    pixels = neopixel.NeoPixel(board.D18, TotalLEDS, auto_write=False)
 
 # define bumper LED Zone start and end
 LeftBumperZoneStart = 0
@@ -67,9 +75,12 @@ def pushLEDs():
     NDpixels = mergeLEDs(LeftBumperZone, RightBumperZone, IntakeZone)
     sendLEDToNetworkTables(NDpixels)
     #copy NDpixels into pixels manually
-    for i in range(len(NDpixels)):
-        pixels[i] = NDpixels[i]
-    pixels.show()
+    if OnHardware:
+        for i in range(len(NDpixels)):
+            pixels[i] = NDpixels[i]
+
+    if OnHardware:
+        pixels.show()
     pass
 
 # define a function that takes in a array of (r,g,b) values and sends that to the network tables with the prefix "neopixel"
@@ -214,15 +225,15 @@ def AUTON_MODE_OVERLAY():
     #1 Ball Auton - Purple with a single 6 pixel yellow strip in the middle
     #2 Ball Normal - Purple with two 6 pixel yellow strips in the middle
     #2 Ball Short - Purple with three 6 pixel yellow strips in the middle
-    if SD.getNumber('AutonSelection', 0) == 1:
+    if SD.getNumber('AutonSelection', 1) == 1:
         #set the intake to purple, yellow, purple using segmentedColor
-        Patterns.segmentedColor(IntakeZone, [PURPLE, YELLOW, PURPLE])
-    elif SD.getNumber('AutonSelection', 0) == 2:
+        Patterns.segmentedColor(IntakeZone, [PURPLE, YELLOW, PURPLE], 0.1)
+    elif SD.getNumber('AutonSelection', 1) == 2:
         #set the intake to purple, yellow, purple, yellow, purple using segmentedColor
-        Patterns.segmentedColor(IntakeZone, [PURPLE, YELLOW, PURPLE, YELLOW, PURPLE])
-    elif SD.getNumber('AutonSelection', 0) == 3:
+        Patterns.segmentedColor(IntakeZone, [PURPLE, YELLOW, PURPLE, YELLOW, PURPLE], 0.1)
+    elif SD.getNumber('AutonSelection', 1) == 3:
         #set the intake to purple, yellow, purple, yellow, purple, yellow, purple using segmentedColor
-        Patterns.segmentedColor(IntakeZone, [PURPLE, YELLOW, PURPLE, YELLOW, PURPLE, YELLOW, PURPLE])
+        Patterns.segmentedColor(IntakeZone, [PURPLE, YELLOW, PURPLE, YELLOW, PURPLE, YELLOW, PURPLE], 0.1)
 
 def AUTONOMOUS():
     if Autonomous_Flag == True:
@@ -252,9 +263,6 @@ while True:
     decodeFMSData()
     # get the current time
     startTime = time.time()
-
-    #SD.putNumber("AutonSelection", 2)
-    FMS.putBoolean("IsRed", False)
 
     PREGAME()
     if DSConnection_Flag and FMSConnection_Flag:

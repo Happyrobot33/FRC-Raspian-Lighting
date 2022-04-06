@@ -71,11 +71,18 @@ DSConnectionTextRect = DSConnectionText.get_rect()
 DSConnectionTextRect.center = DSConnection.center
 DSConnectionValue = False
 
-AutonomousMode = pygame.Rect(10,370,100,50)
+#Make another collumn of buttons to control the virtual robot next to the previous buttons
+AutonomousMode = pygame.Rect(120,10,100,50)
 AutonomousModeText = pygame.font.SysFont("Arial", 20).render("Autonomous Mode", True, (0,0,0))
 AutonomousModeTextRect = AutonomousModeText.get_rect()
 AutonomousModeTextRect.center = AutonomousMode.center
-AutonomousModeValue = 0
+AutonomousModeValue = 1
+
+Alliance = pygame.Rect(120,70,100,50)
+AllianceText = pygame.font.SysFont("Arial", 20).render("Alliance", True, (0,0,0))
+AllianceTextRect = AllianceText.get_rect()
+AllianceTextRect.center = Alliance.center
+AllianceValue = True
 
 
 #create a window mainloop
@@ -113,7 +120,10 @@ while running:
             if AutonomousMode.collidepoint(event.pos):
                 AutonomousModeValue = ((AutonomousModeValue + 1) % 3) + 1
                 sd.putNumber("AutonSelection", AutonomousModeValue)
-
+            #Toggle the Alliance value
+            if Alliance.collidepoint(event.pos):
+                AllianceValue = not AllianceValue
+                FMS.putBoolean("IsRed", AllianceValue)
 
     #Render the buttons based on their state, green if true, red if false
     if EnabledValue:
@@ -167,6 +177,14 @@ while running:
     elif AutonomousModeValue == 3:
         pygame.draw.rect(window, (0,0,255), AutonomousMode)
         window.blit(AutonomousModeText, AutonomousModeTextRect)
+
+    #if alliance value is true, display as red, otherwise, display as blue
+    if AllianceValue:
+        pygame.draw.rect(window, (255,0,0), Alliance)
+        window.blit(AllianceText, AllianceTextRect)
+    else:
+        pygame.draw.rect(window, (0,0,255), Alliance)
+        window.blit(AllianceText, AllianceTextRect)
 
 
     #Draw every pixel from the network table starting from neopixel0 to neopixel79

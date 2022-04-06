@@ -29,7 +29,7 @@ def fadeLEDs(LEDArray, Color1, Color2):
     pass
 
 #This was an absolute pain in my ass
-def segmentedColor(LEDArray, ColorArray):
+def segmentedColor(LEDArray, ColorArray, percentage = 0.5):
     WorkingArray = np.copy(LEDArray)
     nonFullSegmentLength = 0
     #ensure that the array can be divided by the number of colors, and if it cant, then just use the last color
@@ -42,7 +42,7 @@ def segmentedColor(LEDArray, ColorArray):
     WorkingArray = np.split(WorkingArray, len(ColorArray))
     #for each color in ColorArray, fill the corresponding WorkingArray with that color
     for i in range(len(ColorArray)):
-        fillLEDs(WorkingArray[i], ColorArray[i])
+        fadeToColor(WorkingArray[i], ColorArray[i], percentage)
 
     #concatenate the WorkingArray into one array
     WorkingArray = np.concatenate(WorkingArray)
