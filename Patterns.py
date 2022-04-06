@@ -109,11 +109,20 @@ def averageLEDsNoWrap(LEDArray, recursions):
     pass
 
 
-def percentageFillLEDs(LEDArray, Color1, percentage):
+def percentageFillLEDs(LEDArray, Color1, percentage, mirror = False):
     for i in range(len(LEDArray)):
-        if i < (len(LEDArray) * percentage):
-            LEDArray[i] = Color1
+        if not mirror:
+            if i < (len(LEDArray) * percentage):
+                LEDArray[i] = Color1
+        else:
+            if i > (len(LEDArray) * (1 - percentage)):
+                LEDArray[i] = Color1
     pass
+
+def percentageFillLEDsMirrored(LEDArray, Color1, percentage):
+    percentageFillLEDs(LEDArray, Color1, percentage / 2)
+    percentageFillLEDs(LEDArray, Color1, percentage / 2, True)
+
 
 #define a function that takes in a LEDArray and changes the array to be closer to the desired color
 #ensure that the values do not go over 255 or under 0

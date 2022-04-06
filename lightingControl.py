@@ -1,5 +1,3 @@
-
-from typing import Pattern
 from networktables import NetworkTables
 import logging
 import sys
@@ -37,8 +35,8 @@ NetworkTables.initialize(server=ip)
 SD = NetworkTables.getTable("SmartDashboard")
 FMS = NetworkTables.getTable("FMSInfo")
 
-BumperLEDCount = 10
-IntakeLEDCount = 40
+BumperLEDCount = 80
+IntakeLEDCount = 80
 TotalLEDS = (4 * IntakeLEDCount) + (2 * BumperLEDCount)
 if OnHardware:
     pixels = neopixel.NeoPixel(board.D18, TotalLEDS, auto_write=False)
@@ -108,6 +106,8 @@ Test_Flag = False
 Autonomous_Flag = False
 Enabled_Flag = False
 IsRed = True
+RobotTime = 0
+Intake_Flag = False
 def decodeFMSData():
     global DSConnection_Flag
     global FMSConnection_Flag
@@ -116,6 +116,7 @@ def decodeFMSData():
     global Autonomous_Flag
     global Enabled_Flag
     global IsRed
+    global RobotTime
     FMSControlWord = int(FMS.getNumber('FMSControlWord', 0))
     #print(FMSControlWord)
     #print(bin(FMSControlWord))
@@ -151,8 +152,13 @@ def decodeFMSData():
         Enabled_Flag = False
 
     IsRed = FMS.getBoolean('IsRed', True)
+    RobotTime = SD.getNumber('robotTime', 0)
+    Intake_Flag = SD.getBoolean('Intake_Flag', False)
     pass
 
+#No Connection - Flashing Purple
+#Upon FMS Connection - Bumpers go Green
+#Upon Driver Station Connection - Intake goes green, followed by the whole robot then fading to our alliance color
 PREGAME_COUNTER = 0
 INCREMENTING = True
 CAN_TRANSITION = False
@@ -215,6 +221,7 @@ def PREGAME():
             INCREMENTING = True
             pass
 
+#Handles the overlay of what auton mode we are in
 def AUTON_MODE_OVERLAY():
     #Show which auton is selected
     #1 Ball Auton - Purple with a single 6 pixel yellow strip in the middle
@@ -230,19 +237,27 @@ def AUTON_MODE_OVERLAY():
         #set the intake to purple, yellow, purple, yellow, purple, yellow, purple using segmentedColor
         Patterns.segmentedColor(IntakeZone, [PURPLE, YELLOW, PURPLE, YELLOW, PURPLE, YELLOW, PURPLE], 0.1)
 
+#Autonomous:
+#For each individual autonomous mode, have a specific color pattern
+#Also show the remaining Autonomous time on the bumper strips, decreasing
+#1 Ball Auton - Purple with a single 6 pixel yellow strip in the middle
+#2 Ball Normal - Purple with two 6 pixel yellow strips in the middle
+#2 Ball Short - Purple with three 6 pixel yellow strips in the middle
+#These also need to update continously as they are changed by the driverstation
 def AUTONOMOUS():
-    if Autonomous_Flag == True:
-        #set the bumper zones to our alliance color
-        if IsRed == True:
-            Patterns.fillLEDs(LeftBumperZone, RED)
-            Patterns.fillLEDs(RightBumperZone, RED)
-        else:
-            Patterns.fillLEDs(LeftBumperZone, BLUE)
-            Patterns.fillLEDs(RightBumperZone, BLUE)
-        
-        AUTON_MODE_OVERLAY()
-        
-        #Patterns.averageLEDs(IntakeZone, 2)
+    #set the bumper zones to our alliance color
+    if IsRed == True:
+        Patterns.fillLEDs(LeftBumperZone, RED)
+        Patterns.fillLEDs(RightBumperZone, RED)
+    else:
+        Patterns.fillLEDs(LeftBumperZone, BLUE)
+        Patterns.fillLEDs(RightBumperZone, BLUE)
+    
+    AUTON_MODE_OVERLAY()
+
+    VELOCITY_OVERLAY()
+    
+    #Patterns.averageLEDs(IntakeZone, 2)
 
 def VELOCITY_OVERLAY():
     if Enabled_Flag:
@@ -252,8 +267,57 @@ def VELOCITY_OVERLAY():
         Percentage = Velocity / MaxVelocity
 
         #percentage fill the bumpers with the color purple using the velocity percentage
-        Patterns.percentageFillLEDs(LeftBumperZone, PURPLE, Percentage)
+        Patterns.percentageFillLEDsMirrored(LeftBumperZone, YELLOW, Percentage)
+        Patterns.percentageFillLEDsMirrored(RightBumperZone, YELLOW, Percentage)
 
+#Teleop:
+#idle - Purple Bumpers, Yellow Intake???
+#Continous affect - Percentage fill from 0 to max speed, showing the robots current velocity on the bumpers
+#On Pickup - Strobe the intake so it has a "pulling" Pattern up its length
+#On Shoot - Charge affect, followed by a percentage fill to make it look like it is "Pushing" the balls out
+#On Puke - Strobe the intake so it has a "Pushing" Pattern down its length
+#On Climb Detect - Something flashy?????? Unknown, possibly something integrating the current alliance color
+#Warning system - Possibly integrating a system to flash colors at ~40 seconds to indicate it is time to climb
+Increment = 0
+def TELEOP():
+    #set the bumper zones to our alliance color
+    if IsRed == True:
+        Patterns.fillLEDs(LeftBumperZone, RED)
+        Patterns.fillLEDs(RightBumperZone, RED)
+    else:
+        Patterns.fillLEDs(LeftBumperZone, BLUE)
+        Patterns.fillLEDs(RightBumperZone, BLUE)
+    
+    #set the intake to purple
+    Patterns.fillLEDs(IntakeZone, PURPLE)
+
+    VELOCITY_OVERLAY()
+
+    #check if time is below 40 seconds
+    #TODO fix the time
+    if RobotTime > 0:
+        if RobotTime % 0.5 == 0:
+            Patterns.fillLEDs(IntakeZone, YELLOW)
+        else:
+            Patterns.fillLEDs(IntakeZone, PURPLE)
+    
+    #Check if the intake is running
+    if Intake_Flag:
+        Increment += 1
+        #color fade to yellow
+        Patterns.fadeLEDs(IntakeZone, PURPLE, YELLOW)
+        Patterns.shiftLEDs(IntakeZone, 1)
+    pass
+
+#Countdown to match end - Possibly have a countdown visible on the robot as the match is ending, once we have climbed
+def CLIMBING():
+    pass
+
+#On Disable / Match end - Revert to alliance color with sliding purple strips???
+def ENDGAME():
+    pass
+
+toPrint = 0
 while True:
     decodeFMSData()
     # get the current time
@@ -261,14 +325,22 @@ while True:
 
     PREGAME()
     if DSConnection_Flag and FMSConnection_Flag:
-        AUTONOMOUS()
-        VELOCITY_OVERLAY()
+        if Enabled_Flag and Autonomous_Flag:
+            AUTONOMOUS()
+        if Enabled_Flag and Teleop_Flag:
+            TELEOP()
 
     pushLEDs()
 
     #ensure the loop runs at 30 fps
     executionTime = time.time() - startTime
+    #convert to milliseconds
+    MSexecutionTime = round(executionTime * 1000)
 
     if executionTime < (1.0 / 30.0):
-        print("ms per frame: " + str(executionTime))
+        if toPrint == 10:
+            toPrint = 0
+            #print(" ms per frame: " + str(MSexecutionTime),"\n Network Table Ip: " + str(ip),"\n Bumper LED Count: " + str(BumperLEDCount),"\n Intake LED Count: " + str(IntakeLEDCount),"\n Total LED Count: " + str(TotalLEDS), end="\033[A\033[A\033[A\033[A\r")
+        else:
+            toPrint += 1
         time.sleep((1.0 / 30.0) - executionTime)
