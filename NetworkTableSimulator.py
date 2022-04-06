@@ -13,8 +13,6 @@
 #
 #     SmartDashboard.jar ip 127.0.0.1
 #
-
-from msilib.schema import Control
 import time
 import pygame
 import os
@@ -73,6 +71,12 @@ DSConnectionTextRect = DSConnectionText.get_rect()
 DSConnectionTextRect.center = DSConnection.center
 DSConnectionValue = False
 
+AutonomousMode = pygame.Rect(10,370,100,50)
+AutonomousModeText = pygame.font.SysFont("Arial", 20).render("Autonomous Mode", True, (0,0,0))
+AutonomousModeTextRect = AutonomousModeText.get_rect()
+AutonomousModeTextRect.center = AutonomousMode.center
+AutonomousModeValue = 0
+
 
 #create a window mainloop
 robotTime = 0
@@ -106,6 +110,9 @@ while running:
             if DSConnection.collidepoint(event.pos):
                 DSConnectionValue = not DSConnectionValue
                 sd.putBoolean("DS Connection", DSConnectionValue)
+            if AutonomousMode.collidepoint(event.pos):
+                AutonomousModeValue = ((AutonomousModeValue + 1) % 3) + 1
+                sd.putNumber("AutonSelection", AutonomousModeValue)
 
 
     #Render the buttons based on their state, green if true, red if false
@@ -151,6 +158,16 @@ while running:
         pygame.draw.rect(window, (255,0,0), DSConnection)
         window.blit(DSConnectionText, DSConnectionTextRect)
 
+    if AutonomousModeValue == 1:
+        pygame.draw.rect(window, (0,255,0), AutonomousMode)
+        window.blit(AutonomousModeText, AutonomousModeTextRect)
+    elif AutonomousModeValue == 2:
+        pygame.draw.rect(window, (255,0,0), AutonomousMode)
+        window.blit(AutonomousModeText, AutonomousModeTextRect)
+    elif AutonomousModeValue == 3:
+        pygame.draw.rect(window, (0,0,255), AutonomousMode)
+        window.blit(AutonomousModeText, AutonomousModeTextRect)
+
 
     #Draw every pixel from the network table starting from neopixel0 to neopixel79
     #The neopixel0 is the first pixel on the left side of the screen offset to the right by 500 pixels
@@ -167,27 +184,27 @@ while running:
         pygame.draw.rect(window, sd.getNumberArray("neopixel"+str(i),[0,0,0]), (500+i*pixelSize,0,pixelSize,pixelSize))
 
     #label the neopixels with a header on the left of the pixels
-    text = pygame.font.SysFont("Arial", 20).render("Bumper Left", True, (0,0,0))
+    text = pygame.font.SysFont("Arial", 20).render("Bumper Left (" + str(BumperLength) + ")", True, (0,0,0))
     textRect = text.get_rect()
     textRect.center = (500-80,10)
     window.blit(text, textRect)
 
     for i in range(BumperLength,BumperLength * 2):
-        i = i - 80
+        i = i - BumperLength
         pygame.draw.rect(window, sd.getNumberArray("neopixel"+str(i + BumperLength),[0,0,0]), (500+i*pixelSize,30,pixelSize,pixelSize))
 
     #label the neopixels with a header on the left of the pixels
-    text = pygame.font.SysFont("Arial", 20).render("Bumper Right", True, (0,0,0))
+    text = pygame.font.SysFont("Arial", 20).render("Bumper Right (" + str(BumperLength) + ")", True, (0,0,0))
     textRect = text.get_rect()
     textRect.center = (500-80,40)
     window.blit(text, textRect)
 
     for i in range(BumperLength * 2,BumperLength * 2 + IntakeLength):
-        i = i - 160
+        i = i - BumperLength * 2
         pygame.draw.rect(window, sd.getNumberArray("neopixel"+str(i + (BumperLength * 2)),[0,0,0]), (500+i*pixelSize,60,pixelSize,pixelSize))
 
     #label the neopixels with a header on the left of the pixels
-    text = pygame.font.SysFont("Arial", 20).render("Intake", True, (0,0,0))
+    text = pygame.font.SysFont("Arial", 20).render("Intake (" + str(IntakeLength) + ")", True, (0,0,0))
     textRect = text.get_rect()
     textRect.center = (500-80,70)
     window.blit(text, textRect)

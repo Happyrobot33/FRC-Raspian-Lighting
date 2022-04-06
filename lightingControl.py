@@ -1,5 +1,4 @@
-from ast import pattern
-from calendar import leapdays
+
 from typing import Pattern
 from networktables import NetworkTables
 import logging
@@ -7,7 +6,6 @@ import sys
 import time
 import os
 import numpy as np
-from pygame import PixelArray
 
 PURPLE = (148, 0, 211)
 YELLOW = (255,255,0)
@@ -20,22 +18,22 @@ WHITE = (255,255,255)
 #Local librarys to contain functions better
 import Patterns
 
-# import board
-# import neopixel
+import board
+import neopixel
 
 # Setup networktables and logging
 logging.basicConfig(level=logging.DEBUG)
 ip = "127.0.0.1"  # default ip
 # Initialize NetworkTables
-NetworkTables.initialize(server=ip)
+NetworkTables.initialize(server="192.168.1.210")
 # Get the NetworkTables instances
 SD = NetworkTables.getTable("SmartDashboard")
 FMS = NetworkTables.getTable("FMSInfo")
 
-BumperLEDCount = 80
-IntakeLEDCount = 80
+BumperLEDCount = 10
+IntakeLEDCount = 40
 TotalLEDS = (4 * IntakeLEDCount) + (2 * BumperLEDCount)
-# pixels = neopixel.NeoPixel(TotalLEDS)
+pixels = neopixel.NeoPixel(board.D18, TotalLEDS, auto_write=False)
 
 # define bumper LED Zone start and end
 LeftBumperZoneStart = 0
@@ -65,9 +63,13 @@ def mergeLEDs(LeftBumperZone, RightBumperZone, IntakeZone):
     return LEDArray
 
 def pushLEDs():
-    pixels = mergeLEDs(LeftBumperZone, RightBumperZone, IntakeZone)
-    sendLEDToNetworkTables(pixels)
-    #pixels.show()
+    global pixels
+    NDpixels = mergeLEDs(LeftBumperZone, RightBumperZone, IntakeZone)
+    sendLEDToNetworkTables(NDpixels)
+    #copy NDpixels into pixels manually
+    for i in range(len(NDpixels)):
+        pixels[i] = NDpixels[i]
+    pixels.show()
     pass
 
 # define a function that takes in a array of (r,g,b) values and sends that to the network tables with the prefix "neopixel"
@@ -164,10 +166,15 @@ def PREGAME():
         elif PREGAME_COUNTER <= 0:
             INCREMENTING = True
 
-        #fade between purple and off on all IntakeZone, LeftBumperZone, and RightBumperZone. do not use tuples
-        Patterns.fadeBetweenColors(IntakeZone, YELLOW, PURPLE, PREGAME_COUNTER)
-        Patterns.fadeBetweenColors(LeftBumperZone, YELLOW, PURPLE, PREGAME_COUNTER)
-        Patterns.fadeBetweenColors(RightBumperZone, YELLOW, PURPLE, PREGAME_COUNTER)
+        #fade between purple, to black, to yellow, to black on all IntakeZone, LeftBumperZone, and RightBumperZone. do not use tuples
+        if PREGAME_COUNTER < 0.5:
+            Patterns.fadeBetweenColors(IntakeZone, PURPLE, BLACK, PREGAME_COUNTER * 2)
+            Patterns.fadeBetweenColors(LeftBumperZone, PURPLE, BLACK, PREGAME_COUNTER * 2)
+            Patterns.fadeBetweenColors(RightBumperZone, PURPLE, BLACK, PREGAME_COUNTER * 2)
+        elif PREGAME_COUNTER >= 0.5:
+            Patterns.fadeBetweenColors(IntakeZone, BLACK, YELLOW, (PREGAME_COUNTER - 0.5) * 2)
+            Patterns.fadeBetweenColors(LeftBumperZone, BLACK, YELLOW, (PREGAME_COUNTER - 0.5) * 2)
+            Patterns.fadeBetweenColors(RightBumperZone, BLACK, YELLOW, (PREGAME_COUNTER - 0.5) * 2)
         pass
 
         #if we have FMS Connection, Set bumpers to green
@@ -188,19 +195,34 @@ def PREGAME():
         fadeSpeed = 0.1
         #Fade to alliance color on all LEDs
         if IsRed == True:
-            Patterns.fadeToColor(IntakeZone, RED, fadeSpeed)
             Patterns.fadeToColor(LeftBumperZone, RED, fadeSpeed)
             Patterns.fadeToColor(RightBumperZone, RED, fadeSpeed)
         else:
-            Patterns.fadeToColor(IntakeZone, BLUE, fadeSpeed)
             Patterns.fadeToColor(LeftBumperZone, BLUE, fadeSpeed)
             Patterns.fadeToColor(RightBumperZone, BLUE, fadeSpeed)
+        
+        AUTON_MODE_OVERLAY()
         
         if DSConnection_Flag == False or FMSConnection_Flag == False:
             CAN_TRANSITION = False
             PREGAME_COUNTER = 0
             INCREMENTING = True
             pass
+
+def AUTON_MODE_OVERLAY():
+    #Show which auton is selected
+    #1 Ball Auton - Purple with a single 6 pixel yellow strip in the middle
+    #2 Ball Normal - Purple with two 6 pixel yellow strips in the middle
+    #2 Ball Short - Purple with three 6 pixel yellow strips in the middle
+    if SD.getNumber('AutonSelection', 0) == 1:
+        #set the intake to purple, yellow, purple using segmentedColor
+        Patterns.segmentedColor(IntakeZone, [PURPLE, YELLOW, PURPLE])
+    elif SD.getNumber('AutonSelection', 0) == 2:
+        #set the intake to purple, yellow, purple, yellow, purple using segmentedColor
+        Patterns.segmentedColor(IntakeZone, [PURPLE, YELLOW, PURPLE, YELLOW, PURPLE])
+    elif SD.getNumber('AutonSelection', 0) == 3:
+        #set the intake to purple, yellow, purple, yellow, purple, yellow, purple using segmentedColor
+        Patterns.segmentedColor(IntakeZone, [PURPLE, YELLOW, PURPLE, YELLOW, PURPLE, YELLOW, PURPLE])
 
 def AUTONOMOUS():
     if Autonomous_Flag == True:
@@ -211,22 +233,10 @@ def AUTONOMOUS():
         else:
             Patterns.fillLEDs(LeftBumperZone, BLUE)
             Patterns.fillLEDs(RightBumperZone, BLUE)
-
-        #Show which auton is selected
-        #1 Ball Auton - Purple with a single 6 pixel yellow strip in the middle
-        #2 Ball Normal - Purple with two 6 pixel yellow strips in the middle
-        #2 Ball Short - Purple with three 6 pixel yellow strips in the middle
-        if SD.getNumber('AutonSelection', 0) == 1:
-            #set the intake to purple, yellow, purple using segmentedColor
-            Patterns.segmentedColor(IntakeZone, [PURPLE, YELLOW, PURPLE])
-        elif SD.getNumber('AutonSelection', 0) == 2:
-            #set the intake to purple, yellow, purple, yellow, purple using segmentedColor
-            Patterns.segmentedColor(IntakeZone, [PURPLE, YELLOW, PURPLE, YELLOW, PURPLE])
-        elif SD.getNumber('AutonSelection', 0) == 3:
-            #set the intake to purple, yellow, purple, yellow, purple, yellow, purple using segmentedColor
-            Patterns.segmentedColor(IntakeZone, [PURPLE, YELLOW, PURPLE, YELLOW, PURPLE, YELLOW, PURPLE])
         
-        Patterns.averageLEDs(IntakeZone, 2)
+        AUTON_MODE_OVERLAY()
+        
+        #Patterns.averageLEDs(IntakeZone, 2)
 
 def VELOCITY_OVERLAY():
     if Enabled_Flag:
@@ -243,7 +253,7 @@ while True:
     # get the current time
     startTime = time.time()
 
-    SD.putNumber("AutonSelection", 3)
+    #SD.putNumber("AutonSelection", 2)
     FMS.putBoolean("IsRed", False)
 
     PREGAME()
@@ -252,10 +262,10 @@ while True:
         VELOCITY_OVERLAY()
 
 
-    os.system("cls" if os.name == "nt" else "clear")
+    #os.system("cls" if os.name == "nt" else "clear")
     #print the current FPS and ms per frame
-    print("FPS: " + str(FPS))
-    print("ms per frame: " + str(executionTime))
+    #print("FPS: " + str(FPS))
+    #print("ms per frame: " + str(executionTime))
 
     #If enabled flag is set, then fade from the current color to purple on the left bumper zone using fade to color
 #    if Enabled_Flag:
