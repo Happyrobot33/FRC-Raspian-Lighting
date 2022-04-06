@@ -26,7 +26,7 @@ if OnHardware:
 
 # Setup networktables and logging
 logging.basicConfig(level=logging.DEBUG)
-ip = "192.168.1.210"  # default ip
+ip = "10.77.80.71"  # default ip
 #if OnHardware:
 #    ip = "10.36.67.30"
 # Initialize NetworkTables
@@ -35,8 +35,11 @@ NetworkTables.initialize(server=ip)
 SD = NetworkTables.getTable("SmartDashboard")
 FMS = NetworkTables.getTable("FMSInfo")
 
-BumperLEDCount = 80
-IntakeLEDCount = 80
+#Front / Back beam count = 9
+#Side Beam Count = 42
+BumperLEDCount = 9 + 9 + 42
+#Single Beam Count = 60
+IntakeLEDCount = 60
 TotalLEDS = (1 * IntakeLEDCount) + (2 * BumperLEDCount)
 if OnHardware:
     pixels = neopixel.NeoPixel(board.D18, TotalLEDS, auto_write=False)
