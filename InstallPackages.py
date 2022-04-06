@@ -13,8 +13,8 @@ print("\033[94m", end="")
 print("Checking for pip...")
 resetColor()
 #call apt upgrade
-#subprocess.call(["sudo", "apt", "update"])
-#subprocess.call(["sudo", "apt-get", "install", "python3-pip"])
+subprocess.call(["sudo", "apt", "update"])
+subprocess.call(["sudo", "apt-get", "install", "python3-pip"])
 
 
 required_modules = ["rpi_ws281x", "adafruit-circuitpython-neopixel", "adafruit-blinka", "numpy", "pynetworktables"] 
@@ -31,7 +31,8 @@ for i in range(len(required_modules)):
     print("\033[94m", end="")
     print("Checking for " + required_modules[i] + " (" + str(i+1) + "/" + str(len(required_modules)) + ")")
     resetColor()
-    subprocess.call([sys.executable, "-m", "pip", "install", required_modules[i]])
+    #pip3 install <package name> --trusted-host pypi.org --trusted-host files.pythonhosted.org
+    subprocess.call(["sudo", "pip3", "install", required_modules[i], "--trusted-host", "pypi.org", "--trusted-host", "files.pythonhosted.org"])
 
 #change print color to green
 print("\033[92m", end="")
@@ -43,4 +44,5 @@ resetColor()
 
 #run the program
 print("Running lightingControl.py...")
-subprocess.call([sys.executable, "lightingControl.py"])
+#run the program as root
+subprocess.call(["sudo", "python3", "lightingControl.py"])

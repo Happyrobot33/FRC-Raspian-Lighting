@@ -26,9 +26,9 @@ if OnHardware:
 
 # Setup networktables and logging
 logging.basicConfig(level=logging.DEBUG)
-ip = "127.0.0.1"  # default ip
-if OnHardware:
-    ip = "10.36.67.30"
+ip = "192.168.1.210"  # default ip
+#if OnHardware:
+#    ip = "10.36.67.30"
 # Initialize NetworkTables
 NetworkTables.initialize(server=ip)
 # Get the NetworkTables instances
@@ -37,7 +37,7 @@ FMS = NetworkTables.getTable("FMSInfo")
 
 BumperLEDCount = 80
 IntakeLEDCount = 80
-TotalLEDS = (4 * IntakeLEDCount) + (2 * BumperLEDCount)
+TotalLEDS = (1 * IntakeLEDCount) + (2 * BumperLEDCount)
 if OnHardware:
     pixels = neopixel.NeoPixel(board.D18, TotalLEDS, auto_write=False)
 
@@ -55,7 +55,7 @@ RightBumperZone = [BumperLEDCount]
 RightBumperZone = np.zeros((BumperLEDCount, 3), dtype=int)
 
 IntakeZoneStart = 2 * BumperLEDCount
-IntakeZoneEnd = 2 * BumperLEDCount + (IntakeLEDCount * 4) - 1
+IntakeZoneEnd = 2 * BumperLEDCount + (IntakeLEDCount * 1) - 1
 IntakeZone = [IntakeLEDCount]
 # Fill IntakeZone with (BLACK) using numpy
 IntakeZone = np.zeros((IntakeLEDCount, 3), dtype=int)
@@ -64,7 +64,7 @@ IntakeZone = np.zeros((IntakeLEDCount, 3), dtype=int)
 def mergeLEDs(LeftBumperZone, RightBumperZone, IntakeZone):
     # merge the arrays
     LEDArray = np.concatenate(
-        (LeftBumperZone, RightBumperZone, np.tile(IntakeZone, (4, 1)))
+        (LeftBumperZone, RightBumperZone, np.tile(IntakeZone, (1, 1)))
     )
     return LEDArray
 
@@ -337,10 +337,11 @@ while True:
     #convert to milliseconds
     MSexecutionTime = round(executionTime * 1000)
 
+    if toPrint == 10:
+        toPrint = 0
+        print(" ms per frame: " + str(MSexecutionTime),"Framerate: ", 1 / executionTime, "\n Network Table Ip: " + str(ip),"\n Bumper LED Count: " + str(BumperLEDCount),"\n Intake LED Count: " + str(IntakeLEDCount),"\n Total LED Count: " + str(TotalLEDS), end="\033[A\033[A\033[A\033[A\r")
+    else:
+        toPrint += 1
+
     if executionTime < (1.0 / 30.0):
-        if toPrint == 10:
-            toPrint = 0
-            #print(" ms per frame: " + str(MSexecutionTime),"\n Network Table Ip: " + str(ip),"\n Bumper LED Count: " + str(BumperLEDCount),"\n Intake LED Count: " + str(IntakeLEDCount),"\n Total LED Count: " + str(TotalLEDS), end="\033[A\033[A\033[A\033[A\r")
-        else:
-            toPrint += 1
         time.sleep((1.0 / 30.0) - executionTime)
