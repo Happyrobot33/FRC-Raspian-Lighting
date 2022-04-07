@@ -5,4 +5,4 @@ Shooting_Flag - Set to 1 if shooting, otherwise 0
 Outtake_Flag - Set to 1 if outtaking, otherwise 0
 Velocity - set to whatever the robots current velocity is, 0 for no velocity
 MaxVelocity - set to whatever the robots theoretical max velocity is
-Climb_Flag - sent when the lower limit switch is no longer active
+Climber_Flag - sent when the lower limit switch is no longer active
