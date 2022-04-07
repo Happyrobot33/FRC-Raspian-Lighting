@@ -178,18 +178,20 @@ def lerpBetweenTuples(tuple1, tuple2, scale):
     return addTuples(scaleTuple(subtractTuples(tuple2, tuple1), scale), tuple1)
 
 #define a function to correct the gamma of an array
+#LEDArray is an array of tuples
+#return a gamma corrected array
 def correctGamma(LEDArray):
+    gamma = 2.2
+    gammaCorrectedArray = []
     for i in range(len(LEDArray)):
-        LEDArray[i] = hsv_to_rgb(
-            lerpBetweenTuples(
-                rgb_to_hsv(LEDArray[i][0], LEDArray[i][1], LEDArray[i][2]),
-                rgb_to_hsv(0, 0, 0),
-                0.5,
-            ),
-            1,
-            1,
+        gammaCorrectedArray.append(
+            (
+                math.pow(LEDArray[i][0] / 255, gamma) * 255,
+                math.pow(LEDArray[i][1] / 255, gamma) * 255,
+                math.pow(LEDArray[i][2] / 255, gamma) * 255,
+            )
         )
-    pass
+    return gammaCorrectedArray
 
 def limitRGB(rgb):
     if rgb[0] > 255:

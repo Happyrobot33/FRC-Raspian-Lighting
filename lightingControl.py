@@ -1,3 +1,4 @@
+from glob import glob
 import time
 import numpy as np
 import platform
@@ -63,13 +64,15 @@ def mergeLEDs(LeftBumperZone, RightBumperZone, IntakeZone):
 
 def pushLEDs():
     global pixels
-    NDpixels = mergeLEDs(LeftBumperZone, RightBumperZone, IntakeZone)
-    NTM.sendPixelsToNetworkTables(LeftBumperZone, RightBumperZone, IntakeZone)
+    LeftBumperZoneGamma = Patterns.correctGamma(LeftBumperZone)
+    RightBumperZoneGamma = Patterns.correctGamma(RightBumperZone)
+    IntakeZoneGamma = Patterns.correctGamma(IntakeZone)
+    NDpixels = mergeLEDs(LeftBumperZoneGamma, RightBumperZoneGamma, IntakeZoneGamma)
+    NTM.sendPixelsToNetworkTables(LeftBumperZoneGamma, RightBumperZoneGamma, IntakeZoneGamma)
     #copy NDpixels into pixels manually
     if OnHardware:
         for i in range(len(NDpixels)):
             pixels[i] = NDpixels[i]
-        Patterns.correctGamma(pixels)
         pixels.show()
     else:
         #This is done to simulate the LED strip and how long it takes to update
@@ -155,22 +158,29 @@ def PREGAME():
             pass
 
 #Handles the overlay of what auton mode we are in
+PREVIOUSAUTONMODE = 0
 def AUTON_MODE_OVERLAY():
+    global PREVIOUSAUTONMODE
     #Show which auton is selected
     #1 Ball Auton - Purple with a single 6 pixel yellow strip in the middle
     #2 Ball Normal - Purple with two 6 pixel yellow strips in the middle
     #2 Ball Short - Purple with three 6 pixel yellow strips in the middle
-    if NTM.getAutonomousMode() == 1:
+    CURRENTAUTONMODE = NTM.getAutonomousMode()
+
+    if CURRENTAUTONMODE != PREVIOUSAUTONMODE:
+        Patterns.fillLEDs(IntakeZone, PURPLE)
+
+    if CURRENTAUTONMODE == 1:
         #set the intake to purple, yellow, purple using segmentedColor
         Patterns.segmentedColor(IntakeZone, [PURPLE, YELLOW, PURPLE], 0.1)
-    elif NTM.getAutonomousMode() == 2:
+    elif CURRENTAUTONMODE == 2:
         #set the intake to purple, yellow, purple, yellow, purple using segmentedColor
-        Patterns.segmentedColor(
-            IntakeZone, [PURPLE, YELLOW, PURPLE, YELLOW, PURPLE], 0.1)
-    elif NTM.getAutonomousMode() == 3:
+        Patterns.segmentedColor(IntakeZone, [PURPLE, YELLOW, PURPLE, YELLOW, PURPLE], 0.1)
+    elif CURRENTAUTONMODE == 3:
         #set the intake to purple, yellow, purple, yellow, purple, yellow, purple using segmentedColor
-        Patterns.segmentedColor(
-            IntakeZone, [PURPLE, YELLOW, PURPLE, YELLOW, PURPLE, YELLOW, PURPLE], 0.1)
+        Patterns.segmentedColor(IntakeZone, [PURPLE, YELLOW, PURPLE, YELLOW, PURPLE, YELLOW, PURPLE], 0.1)
+    
+    PREVIOUSAUTONMODE = CURRENTAUTONMODE
 
 #Autonomous:
 #For each individual autonomous mode, have a specific color pattern
