@@ -17,7 +17,7 @@ subprocess.call(["sudo", "apt", "update"])
 subprocess.call(["sudo", "apt-get", "install", "python3-pip"])
 
 
-required_modules = ["rpi_ws281x", "adafruit-circuitpython-neopixel", "adafruit-blinka", "numpy", "pynetworktables"] 
+required_modules = ["rpi_ws281x", "adafruit-circuitpython-neopixel", "adafruit-blinka", "numpy", "pynetworktables", "pygame"] 
 
 
 #change print color to blue
