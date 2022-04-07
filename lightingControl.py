@@ -273,6 +273,8 @@ if __name__ == "__main__":
 
         pushLEDs()
 
+        NTM.sendFPS(Clock.get_fps())
+
         if toPrint == 1:
             toPrint = 0
             print("FPS: ", str(Clock.get_fps()) + "                                                                                               ",

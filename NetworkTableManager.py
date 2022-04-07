@@ -4,7 +4,7 @@ import logging
 class NetworkTableManager:
     def __init__(self, BumperLEDCount, IntakeLEDCount, ipAddress = "10.36.67.2"):
         # Setup networktables and logging
-        logging.basicConfig(level=logging.DEBUG)
+        #logging.basicConfig(level=logging.DEBUG)
         # Initialize NetworkTables
         NetworkTables.initialize(server=ipAddress)
         # Get the NetworkTables instances
@@ -34,6 +34,9 @@ class NetworkTableManager:
         for i in range(len(Intake)):
             self.IN.putNumberArray("neopixel" + str(i), Intake[i])
         pass
+
+    def sendFPS(self, FPS):
+        self.LC.putNumber("FPS", FPS)
 
     def getRemoteAddress(self):
         return NetworkTables.getRemoteAddress()
