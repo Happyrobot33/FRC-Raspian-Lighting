@@ -26,7 +26,7 @@ if OnHardware:
 
 # Setup networktables and logging
 logging.basicConfig(level=logging.DEBUG)
-ip = "10.77.80.71"  # default ip
+ip = "10.77.80.64"  # default ip
 rioip = "10.36.67.2" #IP of the rio on the robot
 # Initialize NetworkTables
 NetworkTables.initialize(server=rioip)
@@ -36,7 +36,7 @@ FMS = NetworkTables.getTable("FMSInfo")
 
 #Front / Back beam count = 9
 #Side Beam Count = 42
-BumperLEDCount = 9 + 9 + 42
+BumperLEDCount = 9 + 9 + 42 - 40
 #Single Beam Count = 60
 IntakeLEDCount = 60
 TotalLEDS = (1 * IntakeLEDCount) + (2 * BumperLEDCount)
@@ -103,6 +103,7 @@ def sendLEDToNetworkTables(LEDArray):
 #this function takes in a FMS Control word and decodes it into global variables
 DSConnection_Flag = False
 FMSConnection_Flag = False
+FMSControlWord = 0
 Teleop_Flag = False
 Test_Flag = False
 Autonomous_Flag = False
@@ -110,6 +111,7 @@ Enabled_Flag = False
 IsRed = True
 RobotTime = 0
 Intake_Flag = False
+EStop_Flag = False
 def decodeFMSData():
     global DSConnection_Flag
     global FMSConnection_Flag
@@ -119,7 +121,9 @@ def decodeFMSData():
     global Enabled_Flag
     global IsRed
     global RobotTime
-    FMSControlWord = int(FMS.getNumber('FMSControlWord', 0))
+    global FMSControlWord
+    global EStop_Flag
+    FMSControlWord = int(FMS.getNumber('FMSControlData', 0))
     #print(FMSControlWord)
     #print(bin(FMSControlWord))
     #print(FMSControlWord & 0b10000000)
@@ -133,12 +137,17 @@ def decodeFMSData():
     else:
         FMSConnection_Flag = False
 
-    if FMSControlWord & 0b00000100:
+    if FMSControlWord & 0b00001000:
+        EStop_Flag = True
+    else:
+        EStop_Flag = False
+
+    if Enabled_Flag and Autonomous_Flag == False:
         Teleop_Flag = True
     else:
         Teleop_Flag = False
 
-    if FMSControlWord & 0b00001000:
+    if FMSControlWord & 0b00000100:
         Test_Flag = True
     else:
         Test_Flag = False
@@ -153,7 +162,7 @@ def decodeFMSData():
     else:
         Enabled_Flag = False
 
-    IsRed = FMS.getBoolean('IsRed', True)
+    IsRed = FMS.getBoolean('IsRedAlliance', True)
     RobotTime = SD.getNumber('robotTime', 0)
     Intake_Flag = SD.getBoolean('Intake_Flag', False)
     pass
@@ -200,7 +209,10 @@ def PREGAME():
         if DSConnection_Flag:
             Patterns.fillLEDs(IntakeZone, GREEN)
 
-        if DSConnection_Flag and FMSConnection_Flag:
+        if DSConnection_Flag:
+            #set everything to green
+            Patterns.fillLEDs(LeftBumperZone, GREEN)
+            Patterns.fillLEDs(RightBumperZone, GREEN)
             CAN_TRANSITION = True
             pushLEDs()
             time.sleep(4)
@@ -217,7 +229,7 @@ def PREGAME():
         
         AUTON_MODE_OVERLAY()
         
-        if DSConnection_Flag == False or FMSConnection_Flag == False:
+        if DSConnection_Flag == False:
             CAN_TRANSITION = False
             PREGAME_COUNTER = 0
             INCREMENTING = True
@@ -264,7 +276,7 @@ def AUTONOMOUS():
 def VELOCITY_OVERLAY():
     if Enabled_Flag:
         #read the velocity from the network tables
-        Velocity = SD.getNumber('Velocity', 20)
+        Velocity = SD.getNumber('Velocity', 50)
         MaxVelocity = SD.getNumber('MaxVelocity', 100)
         Percentage = Velocity / MaxVelocity
 
@@ -319,6 +331,14 @@ def CLIMBING():
 def ENDGAME():
     pass
 
+def ESTOP():
+    Patterns.fillLEDs(LeftBumperZone, YELLOW)
+    Patterns.fillLEDs(RightBumperZone, YELLOW)
+    Patterns.fillLEDs(IntakeZone, YELLOW)
+    Patterns.alternateLEDs(LeftBumperZone, PURPLE, 1)
+    Patterns.alternateLEDs(LeftBumperZone, PURPLE, 1)
+    Patterns.alternateLEDs(IntakeZone, PURPLE, 1)
+
 toPrint = 0
 while True:
     decodeFMSData()
@@ -326,11 +346,14 @@ while True:
     startTime = time.time()
 
     PREGAME()
-    if DSConnection_Flag and FMSConnection_Flag:
+    if DSConnection_Flag:
         if Enabled_Flag and Autonomous_Flag:
             AUTONOMOUS()
         if Enabled_Flag and Teleop_Flag:
             TELEOP()
+
+    if EStop_Flag:
+        ESTOP()
 
     pushLEDs()
 
@@ -341,7 +364,15 @@ while True:
 
     if toPrint == 10:
         toPrint = 0
-        print(" ms per frame: " + str(MSexecutionTime),"Framerate: ", 1 / executionTime, "\n Network Table Ip: " + str(ip),"\n Bumper LED Count: " + str(BumperLEDCount),"\n Intake LED Count: " + str(IntakeLEDCount),"\n Total LED Count: " + str(TotalLEDS), end="\033[A\033[A\033[A\033[A\r")
+        print(" ms per frame: " + str(MSexecutionTime),
+        "Framerate: ", 1 / executionTime, 
+        "\n Network Table Ip: " + str(NetworkTables.getRemoteAddress()),
+        "\n Control Word: " + str(FMSControlWord),
+        "\n Teleop: " + str(Teleop_Flag),
+        "\n Bumper LED Count: " + str(BumperLEDCount),
+        "\n Intake LED Count: " + str(IntakeLEDCount),
+        "\n Total LED Count: " + str(TotalLEDS), 
+        end="\033[A\033[A\033[A\033[A\033[A\033[A\r")
     else:
         toPrint += 1
 

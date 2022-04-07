@@ -23,7 +23,7 @@ import logging
 
 logging.basicConfig(level=logging.DEBUG)
 
-NetworkTables.initialize()
+NetworkTables.initialize(server="10.36.67.2")
 sd = NetworkTables.getTable("SmartDashboard")
 FMS = NetworkTables.getTable("FMSInfo")
 
@@ -262,7 +262,7 @@ while running:
         ControlWord = ControlWord | 0b00010000
 
     #send the control word to the robot
-    FMS.putNumber("FMSControlWord", int(ControlWord))
+    FMS.putNumber("FMSControlData", int(ControlWord))
     print("Control Word:", bin(ControlWord), ControlWord)
 
 
