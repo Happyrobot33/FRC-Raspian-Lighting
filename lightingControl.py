@@ -71,6 +71,12 @@ def pushLEDs():
             pixels[i] = NDpixels[i]
         Patterns.correctGamma(pixels)
         pixels.show()
+    else:
+        #This is done to simulate the LED strip and how long it takes to update
+        BitsPerPixel = 24
+        MicroSecondsPerPixel = BitsPerPixel / 800000 * 1000
+        MicroSecondsForAllPixels = len(NDpixels) * MicroSecondsPerPixel
+        time.sleep(MicroSecondsForAllPixels / 1000)
     pass
 
 
@@ -251,6 +257,7 @@ def ESTOP():
 
 
 toPrint = 0
+Clock = pygame.time.Clock()
 #main loop
 if __name__ == "__main__":
     while True:
@@ -266,17 +273,16 @@ if __name__ == "__main__":
 
         pushLEDs()
 
-
-
         if toPrint == 1:
             toPrint = 0
-            print("Network Table Ip: " + str(NTM.getRemoteAddress()),
+            print("FPS: ", str(Clock.get_fps()) + "                                                                                               ",
+                "\nNetwork Table Ip: " + str(NTM.getRemoteAddress()),
                 "\nControl Word: " + str(NTM.getFMSControlData()) + "                                                                                               ",
                 "\nBumper LED Count: " + str(BumperLEDCount),
                 "\nIntake LED Count: " + str(IntakeLEDCount),
                 "\nTotal LED Count: " + str(TotalLEDS),
-                end="\033[A\033[A\033[A\033[A\r")
+                end="\033[A\033[A\033[A\033[A\033[A\r")
         else:
             toPrint += 1
 
-        pygame.time.Clock().tick(60)
+        Clock.tick(60)
