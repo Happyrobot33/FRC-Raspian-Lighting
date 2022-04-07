@@ -1,42 +1,31 @@
-from networktables import NetworkTables
-import logging
-import sys
 import time
-import os
 import numpy as np
 import platform
-
-PURPLE = (148, 0, 211)
-YELLOW = (255,255,0)
-RED = (255,0,0)
-GREEN = (0,255,0)
-BLUE = (0,0,255)
-BLACK = (0,0,0)
-WHITE = (255,255,255)
+import pygame
 
 #Local librarys to contain functions better
 import Patterns
+import NetworkTableManager as NTM
+
+PURPLE = (148, 0, 211)
+YELLOW = (255, 255, 0)
+RED = (255, 0, 0)
+GREEN = (0, 255, 0)
+BLUE = (0, 0, 255)
+BLACK = (0, 0, 0)
+WHITE = (255, 255, 255)
 
 #check if this code is running on the a Raspberry Pi
-OnHardware = platform.machine() == 'armv7l' or platform.machine() == 'aarch64' 
+OnHardware = platform.machine() == 'armv7l' or platform.machine() == 'aarch64'
 
 if OnHardware:
     import board
     import neopixel
 
-# Setup networktables and logging
-logging.basicConfig(level=logging.DEBUG)
-ip = "10.77.80.64"  # default ip
-rioip = "10.36.67.2" #IP of the rio on the robot
-# Initialize NetworkTables
-NetworkTables.initialize(server=rioip)
-# Get the NetworkTables instances
-SD = NetworkTables.getTable("SmartDashboard")
-FMS = NetworkTables.getTable("FMSInfo")
 
 #Front / Back beam count = 9
 #Side Beam Count = 42
-BumperLEDCount = 9 + 9 + 42 - 40
+BumperLEDCount = 9 + 9 + 42
 #Single Beam Count = 60
 IntakeLEDCount = 60
 TotalLEDS = (1 * IntakeLEDCount) + (2 * BumperLEDCount)
@@ -62,6 +51,8 @@ IntakeZone = [IntakeLEDCount]
 # Fill IntakeZone with (BLACK) using numpy
 IntakeZone = np.zeros((IntakeLEDCount, 3), dtype=int)
 
+NTM = NTM.NetworkTableManager(BumperLEDCount, IntakeLEDCount, "localhost")
+
 # create a function that takes in arrays and outputs a single merged array
 def mergeLEDs(LeftBumperZone, RightBumperZone, IntakeZone):
     # merge the arrays
@@ -73,7 +64,7 @@ def mergeLEDs(LeftBumperZone, RightBumperZone, IntakeZone):
 def pushLEDs():
     global pixels
     NDpixels = mergeLEDs(LeftBumperZone, RightBumperZone, IntakeZone)
-    sendLEDToNetworkTables(NDpixels)
+    NTM.sendPixelsToNetworkTables(LeftBumperZone, RightBumperZone, IntakeZone)
     #copy NDpixels into pixels manually
     if OnHardware:
         for i in range(len(NDpixels)):
@@ -83,89 +74,6 @@ def pushLEDs():
         pixels.show()
     pass
 
-# define a function that takes in a array of (r,g,b) values and sends that to the network tables with the prefix "neopixel"
-def sendLEDToNetworkTables(LEDArray):
-    for i in range(len(LEDArray)):
-        SD.putNumberArray("neopixel" + str(i), LEDArray[i])
-    SD.putValue('BumperLength', BumperLEDCount)
-    SD.putValue('IntakeLength', IntakeLEDCount)
-    pass
-
-#The FMS Control word is a 8 bit integer
-#The first bits purpose is Unknown
-#the second bits purpose is Unknown
-#the third bits purpose is Driver station Connection
-#the fourth bits purpose is FMS Connection
-#the fifth bits purpose is Teleop
-#the sixth bits purpose is Test
-#the seventh bits purpose is Autonomous
-#the eighth bits purpose is Enabled
-#this function takes in a FMS Control word and decodes it into global variables
-DSConnection_Flag = False
-FMSConnection_Flag = False
-FMSControlWord = 0
-Teleop_Flag = False
-Test_Flag = False
-Autonomous_Flag = False
-Enabled_Flag = False
-IsRed = True
-RobotTime = 0
-Intake_Flag = False
-EStop_Flag = False
-def decodeFMSData():
-    global DSConnection_Flag
-    global FMSConnection_Flag
-    global Teleop_Flag
-    global Test_Flag
-    global Autonomous_Flag
-    global Enabled_Flag
-    global IsRed
-    global RobotTime
-    global FMSControlWord
-    global EStop_Flag
-    FMSControlWord = int(FMS.getNumber('FMSControlData', 0))
-    #print(FMSControlWord)
-    #print(bin(FMSControlWord))
-    #print(FMSControlWord & 0b10000000)
-    if FMSControlWord & 0b00100000:
-        DSConnection_Flag = True
-    else:
-        DSConnection_Flag = False
-
-    if FMSControlWord & 0b00010000:
-        FMSConnection_Flag = True
-    else:
-        FMSConnection_Flag = False
-
-    if FMSControlWord & 0b00001000:
-        EStop_Flag = True
-    else:
-        EStop_Flag = False
-
-    if Enabled_Flag and Autonomous_Flag == False:
-        Teleop_Flag = True
-    else:
-        Teleop_Flag = False
-
-    if FMSControlWord & 0b00000100:
-        Test_Flag = True
-    else:
-        Test_Flag = False
-
-    if FMSControlWord & 0b00000010:
-        Autonomous_Flag = True
-    else:
-        Autonomous_Flag = False
-
-    if FMSControlWord & 0b00000001:
-        Enabled_Flag = True
-    else:
-        Enabled_Flag = False
-
-    IsRed = FMS.getBoolean('IsRedAlliance', True)
-    RobotTime = SD.getNumber('robotTime', 0)
-    Intake_Flag = SD.getBoolean('Intake_Flag', False)
-    pass
 
 #No Connection - Flashing Purple
 #Upon FMS Connection - Bumpers go Green
@@ -181,9 +89,9 @@ def PREGAME():
     if not CAN_TRANSITION:
         #Create a variable that bounces between 0 and 1
         if PREGAME_COUNTER < 1 and INCREMENTING:
-            PREGAME_COUNTER += 0.01
+            PREGAME_COUNTER += 0.005
         elif PREGAME_COUNTER > 0 and not INCREMENTING:
-            PREGAME_COUNTER -= 0.01
+            PREGAME_COUNTER -= 0.005
         elif PREGAME_COUNTER >= 1:
             INCREMENTING = False
         elif PREGAME_COUNTER <= 0:
@@ -191,26 +99,32 @@ def PREGAME():
 
         #fade between purple, to black, to yellow, to black on all IntakeZone, LeftBumperZone, and RightBumperZone. do not use tuples
         if PREGAME_COUNTER < 0.5:
-            Patterns.fadeBetweenColors(IntakeZone, PURPLE, BLACK, PREGAME_COUNTER * 2)
-            Patterns.fadeBetweenColors(LeftBumperZone, PURPLE, BLACK, PREGAME_COUNTER * 2)
-            Patterns.fadeBetweenColors(RightBumperZone, PURPLE, BLACK, PREGAME_COUNTER * 2)
+            Patterns.fadeBetweenColors(
+                IntakeZone, PURPLE, BLACK, PREGAME_COUNTER * 2)
+            Patterns.fadeBetweenColors(
+                LeftBumperZone, PURPLE, BLACK, PREGAME_COUNTER * 2)
+            Patterns.fadeBetweenColors(
+                RightBumperZone, PURPLE, BLACK, PREGAME_COUNTER * 2)
         elif PREGAME_COUNTER >= 0.5:
-            Patterns.fadeBetweenColors(IntakeZone, BLACK, YELLOW, (PREGAME_COUNTER - 0.5) * 2)
-            Patterns.fadeBetweenColors(LeftBumperZone, BLACK, YELLOW, (PREGAME_COUNTER - 0.5) * 2)
-            Patterns.fadeBetweenColors(RightBumperZone, BLACK, YELLOW, (PREGAME_COUNTER - 0.5) * 2)
+            Patterns.fadeBetweenColors(
+                IntakeZone, BLACK, YELLOW, (PREGAME_COUNTER - 0.5) * 2)
+            Patterns.fadeBetweenColors(
+                LeftBumperZone, BLACK, YELLOW, (PREGAME_COUNTER - 0.5) * 2)
+            Patterns.fadeBetweenColors(
+                RightBumperZone, BLACK, YELLOW, (PREGAME_COUNTER - 0.5) * 2)
         pass
 
         #if we have FMS Connection, Set bumpers to green
-        if FMSConnection_Flag:
+        if NTM.isFMSAttached():
             Patterns.fillLEDs(LeftBumperZone, GREEN)
             Patterns.fillLEDs(RightBumperZone, GREEN)
 
         #if we have DS Connection, Set intake to green
-        if DSConnection_Flag:
-            Patterns.fillLEDs(IntakeZone, GREEN)
-
-        if DSConnection_Flag:
+        #This overrides the FMS Connection, as if it didnt, then the robot would never change if we werent on the field
+        #this should still work on the field however, as it is physically impossible to have a DS connection without a FMS connection
+        if NTM.isDSAttached():
             #set everything to green
+            Patterns.fillLEDs(IntakeZone, GREEN)
             Patterns.fillLEDs(LeftBumperZone, GREEN)
             Patterns.fillLEDs(RightBumperZone, GREEN)
             CAN_TRANSITION = True
@@ -220,16 +134,16 @@ def PREGAME():
     else:
         fadeSpeed = 0.1
         #Fade to alliance color on all LEDs
-        if IsRed == True:
+        if NTM.isRedAlliance() == True:
             Patterns.fadeToColor(LeftBumperZone, RED, fadeSpeed)
             Patterns.fadeToColor(RightBumperZone, RED, fadeSpeed)
         else:
             Patterns.fadeToColor(LeftBumperZone, BLUE, fadeSpeed)
             Patterns.fadeToColor(RightBumperZone, BLUE, fadeSpeed)
-        
+
         AUTON_MODE_OVERLAY()
-        
-        if DSConnection_Flag == False:
+
+        if NTM.isDSAttached() == False:
             CAN_TRANSITION = False
             PREGAME_COUNTER = 0
             INCREMENTING = True
@@ -241,15 +155,17 @@ def AUTON_MODE_OVERLAY():
     #1 Ball Auton - Purple with a single 6 pixel yellow strip in the middle
     #2 Ball Normal - Purple with two 6 pixel yellow strips in the middle
     #2 Ball Short - Purple with three 6 pixel yellow strips in the middle
-    if SD.getNumber('AutonSelection', 1) == 1:
+    if NTM.getAutonomousMode() == 1:
         #set the intake to purple, yellow, purple using segmentedColor
         Patterns.segmentedColor(IntakeZone, [PURPLE, YELLOW, PURPLE], 0.1)
-    elif SD.getNumber('AutonSelection', 1) == 2:
+    elif NTM.getAutonomousMode() == 2:
         #set the intake to purple, yellow, purple, yellow, purple using segmentedColor
-        Patterns.segmentedColor(IntakeZone, [PURPLE, YELLOW, PURPLE, YELLOW, PURPLE], 0.1)
-    elif SD.getNumber('AutonSelection', 1) == 3:
+        Patterns.segmentedColor(
+            IntakeZone, [PURPLE, YELLOW, PURPLE, YELLOW, PURPLE], 0.1)
+    elif NTM.getAutonomousMode() == 3:
         #set the intake to purple, yellow, purple, yellow, purple, yellow, purple using segmentedColor
-        Patterns.segmentedColor(IntakeZone, [PURPLE, YELLOW, PURPLE, YELLOW, PURPLE, YELLOW, PURPLE], 0.1)
+        Patterns.segmentedColor(
+            IntakeZone, [PURPLE, YELLOW, PURPLE, YELLOW, PURPLE, YELLOW, PURPLE], 0.1)
 
 #Autonomous:
 #For each individual autonomous mode, have a specific color pattern
@@ -259,30 +175,30 @@ def AUTON_MODE_OVERLAY():
 #2 Ball Short - Purple with three 6 pixel yellow strips in the middle
 #These also need to update continously as they are changed by the driverstation
 def AUTONOMOUS():
-    #set the bumper zones to our alliance color
-    if IsRed == True:
-        Patterns.fillLEDs(LeftBumperZone, RED)
-        Patterns.fillLEDs(RightBumperZone, RED)
-    else:
-        Patterns.fillLEDs(LeftBumperZone, BLUE)
-        Patterns.fillLEDs(RightBumperZone, BLUE)
-    
+    ALLIANCE_COLOR_MACRO()
     AUTON_MODE_OVERLAY()
-
     VELOCITY_OVERLAY()
-    
-    #Patterns.averageLEDs(IntakeZone, 2)
+
 
 def VELOCITY_OVERLAY():
-    if Enabled_Flag:
+    if NTM.isEnabled():
         #read the velocity from the network tables
-        Velocity = SD.getNumber('Velocity', 50)
-        MaxVelocity = SD.getNumber('MaxVelocity', 100)
+        Velocity = NTM.getVelocity()
+        MaxVelocity = NTM.getMaxVelocity()
         Percentage = Velocity / MaxVelocity
 
         #percentage fill the bumpers with the color purple using the velocity percentage
         Patterns.percentageFillLEDsMirrored(LeftBumperZone, YELLOW, Percentage)
         Patterns.percentageFillLEDsMirrored(RightBumperZone, YELLOW, Percentage)
+
+def ALLIANCE_COLOR_MACRO():
+    #set the bumper zones to our alliance color
+    if NTM.isRedAlliance() == True:
+        Patterns.fillLEDs(LeftBumperZone, RED)
+        Patterns.fillLEDs(RightBumperZone, RED)
+    else:
+        Patterns.fillLEDs(LeftBumperZone, BLUE)
+        Patterns.fillLEDs(RightBumperZone, BLUE)
 
 #Teleop:
 #idle - Purple Bumpers, Yellow Intake???
@@ -294,14 +210,8 @@ def VELOCITY_OVERLAY():
 #Warning system - Possibly integrating a system to flash colors at ~40 seconds to indicate it is time to climb
 Increment = 0
 def TELEOP():
-    #set the bumper zones to our alliance color
-    if IsRed == True:
-        Patterns.fillLEDs(LeftBumperZone, RED)
-        Patterns.fillLEDs(RightBumperZone, RED)
-    else:
-        Patterns.fillLEDs(LeftBumperZone, BLUE)
-        Patterns.fillLEDs(RightBumperZone, BLUE)
-    
+    ALLIANCE_COLOR_MACRO()
+
     #set the intake to purple
     Patterns.fillLEDs(IntakeZone, PURPLE)
 
@@ -309,14 +219,14 @@ def TELEOP():
 
     #check if time is below 40 seconds
     #TODO fix the time
-    if RobotTime > 0:
-        if RobotTime % 0.5 == 0:
+    if NTM.getRobotTime() > 0:
+        if NTM.getRobotTime() % 0.5 == 0:
             Patterns.fillLEDs(IntakeZone, YELLOW)
         else:
             Patterns.fillLEDs(IntakeZone, PURPLE)
-    
+
     #Check if the intake is running
-    if Intake_Flag:
+    if NTM.isIntakeRunning():
         Increment += 1
         #color fade to yellow
         Patterns.fadeLEDs(IntakeZone, PURPLE, YELLOW)
@@ -331,50 +241,43 @@ def CLIMBING():
 def ENDGAME():
     pass
 
+
 def ESTOP():
     Patterns.fillLEDs(LeftBumperZone, YELLOW)
     Patterns.fillLEDs(RightBumperZone, YELLOW)
     Patterns.fillLEDs(IntakeZone, YELLOW)
     Patterns.alternateLEDs(LeftBumperZone, PURPLE, 1)
-    Patterns.alternateLEDs(LeftBumperZone, PURPLE, 1)
+    Patterns.alternateLEDs(RightBumperZone, PURPLE, 1)
     Patterns.alternateLEDs(IntakeZone, PURPLE, 1)
 
+
 toPrint = 0
-while True:
-    decodeFMSData()
-    # get the current time
-    startTime = time.time()
+#main loop
+if __name__ == "__main__":
+    while True:
+        PREGAME()
+        if NTM.isDSAttached():
+            if NTM.isEnabled() and NTM.isAutonomous():
+                AUTONOMOUS()
+            if NTM.isEnabled() and NTM.isTeleop():
+                TELEOP()
 
-    PREGAME()
-    if DSConnection_Flag:
-        if Enabled_Flag and Autonomous_Flag:
-            AUTONOMOUS()
-        if Enabled_Flag and Teleop_Flag:
-            TELEOP()
+        if NTM.isEStopped():
+            ESTOP()
 
-    if EStop_Flag:
-        ESTOP()
+        pushLEDs()
 
-    pushLEDs()
 
-    #ensure the loop runs at 30 fps
-    executionTime = time.time() - startTime
-    #convert to milliseconds
-    MSexecutionTime = round(executionTime * 1000)
 
-    if toPrint == 10:
-        toPrint = 0
-        print(" ms per frame: " + str(MSexecutionTime),
-        "Framerate: ", 1 / executionTime, 
-        "\n Network Table Ip: " + str(NetworkTables.getRemoteAddress()),
-        "\n Control Word: " + str(FMSControlWord),
-        "\n Teleop: " + str(Teleop_Flag),
-        "\n Bumper LED Count: " + str(BumperLEDCount),
-        "\n Intake LED Count: " + str(IntakeLEDCount),
-        "\n Total LED Count: " + str(TotalLEDS), 
-        end="\033[A\033[A\033[A\033[A\033[A\033[A\r")
-    else:
-        toPrint += 1
+        if toPrint == 1:
+            toPrint = 0
+            print("Network Table Ip: " + str(NTM.getRemoteAddress()),
+                "\nControl Word: " + str(NTM.getFMSControlData()) + "                                                                                               ",
+                "\nBumper LED Count: " + str(BumperLEDCount),
+                "\nIntake LED Count: " + str(IntakeLEDCount),
+                "\nTotal LED Count: " + str(TotalLEDS),
+                end="\033[A\033[A\033[A\033[A\r")
+        else:
+            toPrint += 1
 
-    if executionTime < (1.0 / 30.0):
-        time.sleep((1.0 / 30.0) - executionTime)
+        pygame.time.Clock().tick(60)

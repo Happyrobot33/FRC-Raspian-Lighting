@@ -23,9 +23,19 @@ import logging
 
 logging.basicConfig(level=logging.DEBUG)
 
-NetworkTables.initialize(server="10.36.67.2")
-sd = NetworkTables.getTable("SmartDashboard")
+NetworkTables.initialize()
+SD = NetworkTables.getTable("SmartDashboard")
 FMS = NetworkTables.getTable("FMSInfo")
+#Create a new network table subtable called LightingControl, abbreviated LC
+LC = SD.getSubTable("LightingControl")
+#Create a new network table subtable under LC called Pixels, abbreviated PX
+PX = LC.getSubTable("Pixels")
+#Create a new network table subtable under Pixels called LeftBumpers, abbreviated LB
+LB = PX.getSubTable("LeftBumpers")
+#Create a new network table subtable under Pixels called RightBumpers, abbreviated RB
+RB = PX.getSubTable("RightBumpers")
+#Create a new network table subtable under Pixels called Intake, abbreviated IN
+IN = PX.getSubTable("Intake")
 
 #create a GUI with buttons to control variables
 pygame.init()
@@ -33,7 +43,7 @@ pygame.init()
 #create a window 800 by 300
 window = pygame.display.set_mode((10*100,400))
 
-#create 5 pygame toggle buttons called "Enabled", "Autonomous", "Teleop", "Test", "FMS Connection", "Driver Station Connection"
+#create 5 pygame toggle buttons called "Enabled", "Autonomous", "Teleop", "EStop", "FMS Connection", "Driver Station Connection"
 #these buttons will be used to control the virtual robot
 Enabled = pygame.Rect(10,10,100,50)
 EnabledText = pygame.font.SysFont("Arial", 20).render("Enabled", True, (0,0,0))
@@ -53,11 +63,11 @@ TeleopTextRect = TeleopText.get_rect()
 TeleopTextRect.center = Teleop.center
 TeleopValue = False
 
-Test = pygame.Rect(10,190,100,50)
-TestText = pygame.font.SysFont("Arial", 20).render("Test", True, (0,0,0))
-TestTextRect = TestText.get_rect()
-TestTextRect.center = Test.center
-TestValue = False
+EStop = pygame.Rect(10,190,100,50)
+EStopText = pygame.font.SysFont("Arial", 20).render("EStop", True, (0,0,0))
+EStopTextRect = EStopText.get_rect()
+EStopTextRect.center = EStop.center
+EStopValue = False
 
 FMSConnection = pygame.Rect(10,250,100,50)
 FMSConnectionText = pygame.font.SysFont("Arial", 20).render("FMS Connection", True, (0,0,0))
@@ -101,29 +111,25 @@ while running:
             #if the button is clicked, toggle the value of the button
             if Enabled.collidepoint(event.pos):
                 EnabledValue = not EnabledValue
-                sd.putBoolean("Enabled", EnabledValue)
             if Autonomous.collidepoint(event.pos):
                 AutonomousValue = not AutonomousValue
-                sd.putBoolean("Autonomous", AutonomousValue)
+                TeleopValue = not AutonomousValue
             if Teleop.collidepoint(event.pos):
                 TeleopValue = not TeleopValue
-                sd.putBoolean("Teleop", TeleopValue)
-            if Test.collidepoint(event.pos):
-                TestValue = not TestValue
-                sd.putBoolean("Test", TestValue)
+                AutonomousValue = not TeleopValue
+            if EStop.collidepoint(event.pos):
+                EStopValue = not EStopValue
             if FMSConnection.collidepoint(event.pos):
                 FMSConnectionValue = not FMSConnectionValue
-                sd.putBoolean("FMS Connection", FMSConnectionValue)
             if DSConnection.collidepoint(event.pos):
                 DSConnectionValue = not DSConnectionValue
-                sd.putBoolean("DS Connection", DSConnectionValue)
             if AutonomousMode.collidepoint(event.pos):
                 AutonomousModeValue = ((AutonomousModeValue + 1) % 3) + 1
-                sd.putNumber("AutonSelection", AutonomousModeValue)
+                SD.putNumber("AutonSelection", AutonomousModeValue)
             #Toggle the Alliance value
             if Alliance.collidepoint(event.pos):
                 AllianceValue = not AllianceValue
-                FMS.putBoolean("IsRed", AllianceValue)
+                FMS.putBoolean("IsRedAlliance", AllianceValue)
 
     #Render the buttons based on their state, green if true, red if false
     if EnabledValue:
@@ -147,12 +153,12 @@ while running:
         pygame.draw.rect(window, (255,0,0), Teleop)
         window.blit(TeleopText, TeleopTextRect)
 
-    if TestValue:
-        pygame.draw.rect(window, (0,255,0), Test)
-        window.blit(TestText, TestTextRect)
+    if EStopValue:
+        pygame.draw.rect(window, (0,255,0), EStop)
+        window.blit(EStopText, EStopTextRect)
     else:
-        pygame.draw.rect(window, (255,0,0), Test)
-        window.blit(TestText, TestTextRect)
+        pygame.draw.rect(window, (255,0,0), EStop)
+        window.blit(EStopText, EStopTextRect)
 
     if FMSConnectionValue:
         pygame.draw.rect(window, (0,255,0), FMSConnection)
@@ -194,12 +200,12 @@ while running:
     #the value will be in the format of (R,G,B)
     #default color is black
     pixelSize = 5
-    BumperLength = sd.getValue("BumperLength", 0)
+    BumperLength = LC.getValue("BumperLength", 0)
     BumperLength = int(BumperLength)
-    IntakeLength = sd.getValue("IntakeLength", 0)
+    IntakeLength = LC.getValue("IntakeLength", 0)
     IntakeLength = int(IntakeLength)
     for i in range(0,BumperLength):
-        pygame.draw.rect(window, sd.getNumberArray("neopixel"+str(i),[0,0,0]), (500+i*pixelSize,0,pixelSize,pixelSize))
+        pygame.draw.rect(window, LB.getNumberArray("neopixel"+str(i),[0,0,0]), (500+i*pixelSize,0,pixelSize,pixelSize))
 
     #label the neopixels with a header on the left of the pixels
     text = pygame.font.SysFont("Arial", 20).render("Bumper Left (" + str(BumperLength) + ")", True, (0,0,0))
@@ -209,7 +215,7 @@ while running:
 
     for i in range(BumperLength,BumperLength * 2):
         i = i - BumperLength
-        pygame.draw.rect(window, sd.getNumberArray("neopixel"+str(i + BumperLength),[0,0,0]), (500+i*pixelSize,30,pixelSize,pixelSize))
+        pygame.draw.rect(window, RB.getNumberArray("neopixel"+str(i),[0,0,0]), (500+i*pixelSize,30,pixelSize,pixelSize))
 
     #label the neopixels with a header on the left of the pixels
     text = pygame.font.SysFont("Arial", 20).render("Bumper Right (" + str(BumperLength) + ")", True, (0,0,0))
@@ -219,7 +225,7 @@ while running:
 
     for i in range(BumperLength * 2,BumperLength * 2 + IntakeLength):
         i = i - BumperLength * 2
-        pygame.draw.rect(window, sd.getNumberArray("neopixel"+str(i + (BumperLength * 2)),[0,0,0]), (500+i*pixelSize,60,pixelSize,pixelSize))
+        pygame.draw.rect(window, IN.getNumberArray("neopixel"+str(i),[0,0,0]), (500+i*pixelSize,60,pixelSize,pixelSize))
 
     #label the neopixels with a header on the left of the pixels
     text = pygame.font.SysFont("Arial", 20).render("Intake (" + str(IntakeLength) + ")", True, (0,0,0))
@@ -230,18 +236,15 @@ while running:
     #update the window
     pygame.display.update()
 
-    os.system("cls" if os.name == "nt" else "clear")
-    print("Lighting HeartBeat:", sd.getNumber("HeartBeat", -1), "Enabled:", sd.getBoolean("Enabled", False), "Autonomous:", sd.getBoolean("Autonomous", False), "Teleop:", sd.getBoolean("Teleop", False), "Test:", sd.getBoolean("Test", False), "RobotTime:", sd.getNumber("robotTime", 0))
-    
     #update the robot time
-    sd.putNumber("robotTime", robotTime)
+    SD.putNumber("RobotTime", robotTime)
 
     #The first bits purpose is Unknown
     #the second bits purpose is Unknown
     #the third bits purpose is Driver station Connection
     #the fourth bits purpose is FMS Connection
     #the fifth bits purpose is Teleop
-    #the sixth bits purpose is Test
+    #the sixth bits purpose is EStop
     #the seventh bits purpose is Autonomous
     #the eighth bits purpose is Enabled
     #this function takes in a FMS Control word and decodes it into global variables
@@ -252,9 +255,7 @@ while running:
         ControlWord = ControlWord | 0b00000001
     if AutonomousValue:
         ControlWord = ControlWord | 0b00000010
-    if TeleopValue:
-        ControlWord = ControlWord | 0b00000100
-    if TestValue:
+    if EStopValue:
         ControlWord = ControlWord | 0b00001000
     if DSConnectionValue:
         ControlWord = ControlWord | 0b00100000
@@ -263,7 +264,6 @@ while running:
 
     #send the control word to the robot
     FMS.putNumber("FMSControlData", int(ControlWord))
-    print("Control Word:", bin(ControlWord), ControlWord)
 
 
     time.sleep(0.0625)
