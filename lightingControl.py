@@ -69,8 +69,7 @@ def pushLEDs():
     if OnHardware:
         for i in range(len(NDpixels)):
             pixels[i] = NDpixels[i]
-
-    if OnHardware:
+        Patterns.correctGamma(pixels)
         pixels.show()
     pass
 
