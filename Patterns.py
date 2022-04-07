@@ -1,5 +1,6 @@
 import numpy as np
 import random
+import math
 
 def fillLEDs(LEDArray, Color1):
     for i in range(len(LEDArray)):
@@ -123,9 +124,75 @@ def percentageFillLEDsMirrored(LEDArray, Color1, percentage):
     percentageFillLEDs(LEDArray, Color1, percentage / 2)
     percentageFillLEDs(LEDArray, Color1, percentage / 2, True)
 
+def rgb_to_hsv(r, g, b):
+    r, g, b = r/255.0, g/255.0, b/255.0
+    mx = max(r, g, b)
+    mn = min(r, g, b)
+    df = mx-mn
+    if mx == mn:
+        h = 0
+    elif mx == r:
+        h = (60 * ((g-b)/df) + 360) % 360
+    elif mx == g:
+        h = (60 * ((b-r)/df) + 120) % 360
+    elif mx == b:
+        h = (60 * ((r-g)/df) + 240) % 360
+    if mx == 0:
+        s = 0
+    else:
+        s = df/mx
+    v = mx
+    return h, s, v
+
+def hsv_to_rgb(h, s, v):
+    h = float(h)
+    s = float(s)
+    v = float(v)
+    h60 = h / 60.0
+    h60f = math.floor(h60)
+    hi = int(h60f) % 6
+    f = h60 - h60f
+    p = v * (1 - s)
+    q = v * (1 - f * s)
+    t = v * (1 - (1 - f) * s)
+    r, g, b = 0, 0, 0
+    if hi == 0: r, g, b = v, t, p
+    elif hi == 1: r, g, b = q, v, p
+    elif hi == 2: r, g, b = p, v, t
+    elif hi == 3: r, g, b = p, q, v
+    elif hi == 4: r, g, b = t, p, v
+    elif hi == 5: r, g, b = v, p, q
+    r, g, b = int(r * 255), int(g * 255), int(b * 255)
+    return r, g, b
+
+def subtractTuples(tuple1, tuple2):
+    return (tuple1[0] - tuple2[0], tuple1[1] - tuple2[1], tuple1[2] - tuple2[2])
+
+def addTuples(tuple1, tuple2):
+    return (tuple1[0] + tuple2[0], tuple1[1] + tuple2[1], tuple1[2] + tuple2[2])
+
+def scaleTuple(tuple1, scale):
+    return (tuple1[0] * scale, tuple1[1] * scale, tuple1[2] * scale)
+
+def lerpBetweenTuples(tuple1, tuple2, scale):
+    return addTuples(scaleTuple(subtractTuples(tuple2, tuple1), scale), tuple1)
+
+def limitRGB(rgb):
+    if rgb[0] > 255:
+        rgb[0] = 255
+    if rgb[1] > 255:
+        rgb[1] = 255
+    if rgb[2] > 255:
+        rgb[2] = 255
+    if rgb[0] < 0:
+        rgb[0] = 0
+    if rgb[1] < 0:
+        rgb[1] = 0
+    if rgb[2] < 0:
+        rgb[2] = 0
+    return rgb
 
 #define a function that takes in a LEDArray and changes the array to be closer to the desired color
-#ensure that the values do not go over 255 or under 0
 #Percentage is a float from 0 to 1
 def fadeToColor(LEDArray, Color1, percentage):
     #prevent percentage from going over 1
@@ -135,39 +202,11 @@ def fadeToColor(LEDArray, Color1, percentage):
     if percentage < 0:
         percentage = 0
     for i in range(len(LEDArray)):
-        #move the red value towards the desired colors red value
-        if LEDArray[i][0] < Color1[0]:
-            LEDArray[i][0] += (Color1[0] - LEDArray[i][0]) * percentage
-        elif LEDArray[i][0] > Color1[0]:
-            LEDArray[i][0] -= (LEDArray[i][0] - Color1[0]) * percentage
-        #move the green value towards the desired colors green value
-        if LEDArray[i][1] < Color1[1]:
-            LEDArray[i][1] += (Color1[1] - LEDArray[i][1]) * percentage
-        elif LEDArray[i][1] > Color1[1]:
-            LEDArray[i][1] -= (LEDArray[i][1] - Color1[1]) * percentage
-        #move the blue value towards the desired colors blue value
-        if LEDArray[i][2] < Color1[2]:
-            LEDArray[i][2] += (Color1[2] - LEDArray[i][2]) * percentage
-        elif LEDArray[i][2] > Color1[2]:
-            LEDArray[i][2] -= (LEDArray[i][2] - Color1[2]) * percentage
-
-        #ensure that the values do not go over 255 or under 0
-        if LEDArray[i][0] > 255:
-            LEDArray[i][0] = 255
-        if LEDArray[i][1] > 255:
-            LEDArray[i][1] = 255
-        if LEDArray[i][2] > 255:
-            LEDArray[i][2] = 255
-        if LEDArray[i][0] < 0:
-            LEDArray[i][0] = 0
-        if LEDArray[i][1] < 0:
-            LEDArray[i][1] = 0
-        if LEDArray[i][2] < 0:
-            LEDArray[i][2] = 0
+        LEDArray[i] = lerpBetweenTuples(LEDArray[i], Color1, percentage)
+        LEDArray[i] = limitRGB(LEDArray[i])
     pass
 
 #define a function that takes in a LEDArray and uses a percentage to fade between two different colors
-#ensure that the values do not go over 255 or under 0
 def fadeBetweenColors(LEDArray, Color1, Color2, percentage):
     #prevent percentage from going over 1
     if percentage > 1:
@@ -176,25 +215,8 @@ def fadeBetweenColors(LEDArray, Color1, Color2, percentage):
     if percentage < 0:
         percentage = 0
     for i in range(len(LEDArray)):
-        #change the led array as such to be closer to color 1 when percentage is 0 and closer to color 2 when percentage is 1. do not use the length of the LEDArray as the percentage
-        LEDArray[i] = [
-            int(Color1[0] + ((Color2[0] - Color1[0]) * percentage)),
-            int(Color1[1] + ((Color2[1] - Color1[1]) * percentage)),
-            int(Color1[2] + ((Color2[2] - Color1[2]) * percentage)),
-        ]
-        #ensure that the values do not go over 255 or under 0
-        if LEDArray[i][0] > 255:
-            LEDArray[i][0] = 255
-        if LEDArray[i][1] > 255:
-            LEDArray[i][1] = 255
-        if LEDArray[i][2] > 255:
-            LEDArray[i][2] = 255
-        if LEDArray[i][0] < 0:
-            LEDArray[i][0] = 0
-        if LEDArray[i][1] < 0:
-            LEDArray[i][1] = 0
-        if LEDArray[i][2] < 0:
-            LEDArray[i][2] = 0
+        LEDArray[i] = lerpBetweenTuples(Color1, Color2, percentage)
+        LEDArray[i] = limitRGB(LEDArray[i])
     pass
 
 def randomStars(LEDArray, color):
