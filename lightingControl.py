@@ -17,6 +17,12 @@ BLUE = (0, 0, 255)
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 
+#use this to make a value independent of the frame rate
+FPS = 1
+def syncWithFrameRate(Value):
+    global FPS
+    return Value / max(FPS, 1)
+
 #check if this code is running on the a Raspberry Pi
 OnHardware = platform.machine() == 'armv7l' or platform.machine() == 'aarch64'
 
@@ -81,6 +87,9 @@ def pushLEDs():
         #MicroSecondsPerPixel = BitsPerPixel / 800000 * 1000
         #MicroSecondsForAllPixels = len(NDpixels) * MicroSecondsPerPixel
         #time.sleep(MicroSecondsForAllPixels / 1000 * 6)
+        
+        #This code is much accurate, even though it seems more inneficient.
+        #This is taken directly from the neopixel librarys calculations
         #about 100ms per 100 bytes
         bytes = 0
         for i in range(len(NDpixels)):
@@ -103,9 +112,9 @@ def PREGAME():
     if not CAN_TRANSITION:
         #Create a variable that bounces between 0 and 1
         if PREGAME_COUNTER < 1 and INCREMENTING:
-            PREGAME_COUNTER += 0.005
+            PREGAME_COUNTER += syncWithFrameRate(0.5)
         elif PREGAME_COUNTER > 0 and not INCREMENTING:
-            PREGAME_COUNTER -= 0.005
+            PREGAME_COUNTER -= syncWithFrameRate(0.5)
         elif PREGAME_COUNTER >= 1:
             INCREMENTING = False
         elif PREGAME_COUNTER <= 0:
@@ -146,7 +155,7 @@ def PREGAME():
             time.sleep(4)
 
     else:
-        fadeSpeed = 0.1
+        fadeSpeed = syncWithFrameRate(3)
         #Fade to alliance color on all LEDs
         if NTM.isRedAlliance() == True:
             Patterns.fadeToColor(LeftBumperZone, RED, fadeSpeed)
@@ -176,15 +185,17 @@ def AUTON_MODE_OVERLAY():
     if CURRENTAUTONMODE != PREVIOUSAUTONMODE:
         Patterns.fillLEDs(IntakeZone, PURPLE)
 
+    FadeSpeed = syncWithFrameRate(7)
+
     if CURRENTAUTONMODE == 1:
         #set the intake to purple, yellow, purple using segmentedColor
-        Patterns.segmentedColor(IntakeZone, [PURPLE, YELLOW, PURPLE], 0.1)
+        Patterns.segmentedColor(IntakeZone, [PURPLE, YELLOW, PURPLE], FadeSpeed)
     elif CURRENTAUTONMODE == 2:
         #set the intake to purple, yellow, purple, yellow, purple using segmentedColor
-        Patterns.segmentedColor(IntakeZone, [PURPLE, YELLOW, PURPLE, YELLOW, PURPLE], 0.1)
+        Patterns.segmentedColor(IntakeZone, [PURPLE, YELLOW, PURPLE, YELLOW, PURPLE], FadeSpeed)
     elif CURRENTAUTONMODE == 3:
         #set the intake to purple, yellow, purple, yellow, purple, yellow, purple using segmentedColor
-        Patterns.segmentedColor(IntakeZone, [PURPLE, YELLOW, PURPLE, YELLOW, PURPLE, YELLOW, PURPLE], 0.1)
+        Patterns.segmentedColor(IntakeZone, [PURPLE, YELLOW, PURPLE, YELLOW, PURPLE, YELLOW, PURPLE], FadeSpeed)
     
     PREVIOUSAUTONMODE = CURRENTAUTONMODE
 
@@ -239,7 +250,7 @@ def TELEOP():
     VELOCITY_OVERLAY()
 
     #check if time is below 40 seconds
-    #TODO fix the time
+    #TODO deal with time weirdness
     if NTM.getRobotTime() > 0:
         if NTM.getRobotTime() % 0.5 == 0:
             Patterns.fillLEDs(IntakeZone, YELLOW)
@@ -248,10 +259,10 @@ def TELEOP():
 
     #Check if the intake is running
     if NTM.isIntakeRunning():
-        Increment += 1
+        Increment += syncWithFrameRate(1)
         #color fade to yellow
         Patterns.fadeLEDs(IntakeZone, PURPLE, YELLOW)
-        Patterns.shiftLEDs(IntakeZone, 1)
+        Patterns.shiftLEDs(IntakeZone, Increment)
     pass
 
 #Countdown to match end - Possibly have a countdown visible on the robot as the match is ending, once we have climbed
@@ -289,17 +300,19 @@ if __name__ == "__main__":
 
         pushLEDs()
 
-        NTM.sendFPS(Clock.get_fps())
+        NTM.sendFPS(FPS)
+        FPS = Clock.get_fps()
 
-        if toPrint == 1:
+        if toPrint == 0:
             toPrint = 0
             print("FPS: ", str(Clock.get_fps()) + "                                                                                               ",
+                "\nFPS Adjustment Value: ", syncWithFrameRate(20),
                 "\nNetwork Table Ip: " + str(NTM.getRemoteAddress()),
                 "\nControl Word: " + str(NTM.getFMSControlData()) + "                                                                                               ",
                 "\nBumper LED Count: " + str(BumperLEDCount),
                 "\nIntake LED Count: " + str(IntakeLEDCount),
                 "\nTotal LED Count: " + str(TotalLEDS),
-                end="\033[A\033[A\033[A\033[A\033[A\r")
+                end="\033[A\033[A\033[A\033[A\033[A\033[A\r")
         else:
             toPrint += 1
 
