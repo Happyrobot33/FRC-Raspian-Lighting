@@ -1,4 +1,5 @@
 from glob import glob
+import math
 import time
 import numpy as np
 import platform
@@ -267,20 +268,50 @@ def TELEOP():
 
     #Check if the intake is running
     if NTM.isIntakeRunning():
-        Increment += syncWithFrameRate(20)
+        Increment += syncWithFrameRate(100)
         #color fade to yellow
         Patterns.fadeLEDs(IntakeZone, PURPLE, YELLOW)
         Patterns.shiftLEDs(IntakeZone, Increment)
+    #Check if the intake is puking
+    elif NTM.isOuttakeRunning():
+        Increment += syncWithFrameRate(100)
+        #color fade to purple
+        Patterns.fadeLEDs(IntakeZone, YELLOW, PURPLE)
+        Patterns.shiftLEDs(IntakeZone, -Increment)
+    #Check if the intake is shooting
+    elif NTM.isShooterRunning():
+        Increment += syncWithFrameRate(1)
+        Patterns.fillLEDs(IntakeZone, YELLOW)
+        if Increment <= 1:
+            Patterns.fillLEDs(IntakeZone, YELLOW)
+            Patterns.percentageFillLEDs(IntakeZone, PURPLE, 1 - Increment)
+        elif Increment >= 2:
+            Patterns.fillLEDs(IntakeZone, YELLOW)
+            Patterns.percentageFillLEDs(IntakeZone, PURPLE, (Increment - 2) * 2)
+    #Check if the climber is running
+    elif NTM.isClimberRunning():
+        Increment += syncWithFrameRate(100)
+        
+        #Slide an "ant" across the bumpers, with the current alliance color
+        if NTM.isRedAlliance():
+            Patterns.fadeLEDs(LeftBumperZone, RED, YELLOW)
+            Patterns.fadeLEDs(RightBumperZone, RED, YELLOW)
+        else:
+            Patterns.fadeLEDs(LeftBumperZone, BLUE, YELLOW)
+            Patterns.fadeLEDs(RightBumperZone, BLUE, YELLOW)
+        Patterns.shiftLEDs(LeftBumperZone, Increment)
+        Patterns.shiftLEDs(RightBumperZone, Increment)
+
+        Patterns.segmentedColor(IntakeZone, [PURPLE, YELLOW, PURPLE], 1)
+        Patterns.shiftLEDs(IntakeZone, math.sin(Increment / 40) * 20)
     else:
         Increment = 0 #reset the increment to ensure it doesnt get too big and cause an error
     pass
 
-#Countdown to match end - Possibly have a countdown visible on the robot as the match is ending, once we have climbed
-def CLIMBING():
-    pass
-
 #On Disable / Match end - Revert to alliance color with sliding purple strips???
 def ENDGAME():
+    ALLIANCE_COLOR_MACRO()
+    Patterns.fillLEDs(IntakeZone, PURPLE)
     pass
 
 
@@ -304,6 +335,8 @@ if __name__ == "__main__":
                 AUTONOMOUS()
             if NTM.isEnabled() and NTM.isTeleop():
                 TELEOP()
+            if NTM.isGameEnded():
+                ENDGAME()
 
         if NTM.isEStopped():
             ESTOP()
