@@ -3,6 +3,7 @@ import time
 import numpy as np
 import platform
 import pygame
+import sys
 
 #Local librarys to contain functions better
 import Patterns
@@ -76,10 +77,15 @@ def pushLEDs():
         pixels.show()
     else:
         #This is done to simulate the LED strip and how long it takes to update
-        BitsPerPixel = 24
-        MicroSecondsPerPixel = BitsPerPixel / 800000 * 1000
-        MicroSecondsForAllPixels = len(NDpixels) * MicroSecondsPerPixel
-        time.sleep(MicroSecondsForAllPixels / 1000)
+        #BitsPerPixel = 24
+        #MicroSecondsPerPixel = BitsPerPixel / 800000 * 1000
+        #MicroSecondsForAllPixels = len(NDpixels) * MicroSecondsPerPixel
+        #time.sleep(MicroSecondsForAllPixels / 1000 * 6)
+        #about 100ms per 100 bytes
+        bytes = 0
+        for i in range(len(NDpixels)):
+            bytes += NDpixels[i].tobytes().__len__()
+        time.sleep(0.001 * ((bytes // 100) + 1))
     pass
 
 
@@ -297,4 +303,4 @@ if __name__ == "__main__":
         else:
             toPrint += 1
 
-        Clock.tick(60)
+        Clock.tick(20)
