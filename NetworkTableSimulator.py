@@ -123,9 +123,10 @@ ClimberValue = False
 robotTime = 0
 ControlWord = 0
 running = True
+backgroundColor = (200,200,200)
 while running:
     #set the background color to gray
-    window.fill((200,200,200))
+    window.fill(backgroundColor)
 
     #check for events
     for event in pygame.event.get():
@@ -265,17 +266,85 @@ while running:
         window.blit(ClimberText, ClimberTextRect)
 
 
+    pixelSize = 5
+    BumperLength = LC.getValue("BumperLength", 20)
+    BumperLength = int(BumperLength)
+    IntakeLength = LC.getValue("IntakeLength", 20)
+    IntakeLength = int(IntakeLength)
+
+    #Define a sub surface to draw on
+    bumperShortSegment = 8
+    width = bumperShortSegment * pixelSize + pixelSize
+    height = (BumperLength - bumperShortSegment - bumperShortSegment) * pixelSize
+    sub = pygame.Surface((width,height))
+    sub.fill(backgroundColor)
+    #sub.set_alpha(128)
+
+    for i in range(0, bumperShortSegment):
+        inversei = bumperShortSegment - i
+        pygame.draw.rect(sub, LB.getNumberArray("neopixel"+str(inversei),[0,0,0]), (i * pixelSize + pixelSize, height - pixelSize, pixelSize, pixelSize))
+
+    for i in range(BumperLength - bumperShortSegment, BumperLength):
+        offsetX = i - (BumperLength - bumperShortSegment)
+        pygame.draw.rect(sub, LB.getNumberArray("neopixel"+str(i),[0,0,0]), (offsetX * pixelSize + pixelSize, 0, pixelSize, pixelSize))
+    
+    for i in range(bumperShortSegment, BumperLength - bumperShortSegment):
+        inversei = BumperLength - i
+        pygame.draw.rect(sub, LB.getNumberArray("neopixel"+str(inversei),[0,0,0]), (0, (i * pixelSize) - bumperShortSegment * pixelSize, pixelSize, pixelSize))
+
+    window.blit(sub, (window.get_width() / 2,window.get_height() / 3))
+
+    #Do the same for the right bumper
+    sub = pygame.Surface((width,height))
+    sub.fill(backgroundColor)
+    #sub.set_alpha(128)
+
+    for i in range(0, bumperShortSegment):
+        inversei = bumperShortSegment - i
+        pygame.draw.rect(sub, RB.getNumberArray("neopixel"+str(inversei),[0,0,0]), (i * pixelSize + pixelSize, height - pixelSize, pixelSize, pixelSize))
+
+    for i in range(BumperLength - bumperShortSegment, BumperLength):
+        offsetX = i - (BumperLength - bumperShortSegment)
+        pygame.draw.rect(sub, RB.getNumberArray("neopixel"+str(i),[0,0,0]), (offsetX * pixelSize + pixelSize, 0, pixelSize, pixelSize))
+
+    for i in range(bumperShortSegment, BumperLength - bumperShortSegment):
+        inversei = BumperLength - i
+        pygame.draw.rect(sub, RB.getNumberArray("neopixel"+str(inversei),[0,0,0]), (0, (i * pixelSize) - bumperShortSegment * pixelSize, pixelSize, pixelSize))
+
+    #mirror the image
+    sub = pygame.transform.flip(sub, True, False)
+    window.blit(sub, (window.get_width() / 2 + width + 100,window.get_height() / 3))
+
+    #draw an arrow pointing up to indicate the direction of the robot, centered on the intake
+    arrow = pygame.Surface((width,height))
+    arrow.fill(backgroundColor)
+    #arrow.set_alpha(12)
+    pygame.draw.polygon(arrow, (0,0,0), ((width / 2, height), (width / 2 - pixelSize, height - pixelSize), (width / 2 + pixelSize, height - pixelSize)))
+    #flip the image
+    arrow = pygame.transform.flip(arrow, False, True)
+    window.blit(arrow, (window.get_width() / 2 + (width + 100) / 2,window.get_height() / 3 - 50))
+
+    #Do the same for the intake, centered in the middle of the two bumpers, going vertically, starting from the top going down
+    height = (IntakeLength) * pixelSize
+    sub = pygame.Surface((width,height))
+    sub.fill(backgroundColor)
+    #sub.set_alpha(128)
+
+    for i in range(0, IntakeLength):
+        pygame.draw.rect(sub, IN.getNumberArray("neopixel"+str(i),[0,0,0]), (0, i * pixelSize, pixelSize, pixelSize))
+
+    for i in range(0, IntakeLength):
+        pygame.draw.rect(sub, IN.getNumberArray("neopixel"+str(i),[0,0,0]), (width - pixelSize, i * pixelSize, pixelSize, pixelSize))
+
+    window.blit(sub, (window.get_width() / 2 + (width + 100) / 2,window.get_height() / 3 - 40))
+
+
     #Draw every pixel from the network table starting from neopixel0 to neopixel79
     #The neopixel0 is the first pixel on the left side of the screen offset to the right by 500 pixels
     #each pixel is only VARIABLE pixels tall
     #label each pixel with its number
     #the value will be in the format of (R,G,B)
     #default color is black
-    pixelSize = 5
-    BumperLength = LC.getValue("BumperLength", 0)
-    BumperLength = int(BumperLength)
-    IntakeLength = LC.getValue("IntakeLength", 0)
-    IntakeLength = int(IntakeLength)
     for i in range(0,BumperLength):
         pygame.draw.rect(window, LB.getNumberArray("neopixel"+str(i),[0,0,0]), (500+i*pixelSize,0,pixelSize,pixelSize))
 
