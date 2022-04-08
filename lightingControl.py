@@ -23,6 +23,12 @@ def syncWithFrameRate(Value):
     global FPS
     return Value / max(FPS, 1)
 
+def FPS_SAFE_SLEEP(Value):
+    global FPS
+    time.sleep(Value)
+    for i in range(20):
+        Clock.tick(20)
+
 #check if this code is running on the a Raspberry Pi
 OnHardware = platform.machine() == 'armv7l' or platform.machine() == 'aarch64'
 
@@ -152,7 +158,8 @@ def PREGAME():
             Patterns.fillLEDs(RightBumperZone, GREEN)
             CAN_TRANSITION = True
             pushLEDs()
-            time.sleep(4)
+            FPS_SAFE_SLEEP(4)
+            #time.sleep(4)
 
     else:
         fadeSpeed = syncWithFrameRate(3)
@@ -242,6 +249,7 @@ def ALLIANCE_COLOR_MACRO():
 #Warning system - Possibly integrating a system to flash colors at ~40 seconds to indicate it is time to climb
 Increment = 0
 def TELEOP():
+    global Increment
     ALLIANCE_COLOR_MACRO()
 
     #set the intake to purple
@@ -259,10 +267,12 @@ def TELEOP():
 
     #Check if the intake is running
     if NTM.isIntakeRunning():
-        Increment += syncWithFrameRate(1)
+        Increment += syncWithFrameRate(20)
         #color fade to yellow
         Patterns.fadeLEDs(IntakeZone, PURPLE, YELLOW)
         Patterns.shiftLEDs(IntakeZone, Increment)
+    else:
+        Increment = 0 #reset the increment to ensure it doesnt get too big and cause an error
     pass
 
 #Countdown to match end - Possibly have a countdown visible on the robot as the match is ending, once we have climbed

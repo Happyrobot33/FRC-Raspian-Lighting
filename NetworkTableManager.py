@@ -55,7 +55,7 @@ class NetworkTableManager:
         return self.getFMSData()
 
     def isTeleop(self):
-        return bool(self.isEnabled() and not self.isAutonomous)
+        return bool(self.isEnabled() and not self.isAutonomous())
 
     def isEnabled(self):
         return bool(self.getFMSData() & 0b00000001)
