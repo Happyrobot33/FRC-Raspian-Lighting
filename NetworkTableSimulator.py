@@ -55,7 +55,7 @@ Autonomous = pygame.Rect(10,70,100,50)
 AutonomousText = pygame.font.SysFont("Arial", 20).render("Autonomous", True, (0,0,0))
 AutonomousTextRect = AutonomousText.get_rect()
 AutonomousTextRect.center = Autonomous.center
-AutonomousValue = False
+AutonomousValue = True
 
 Teleop = pygame.Rect(10,130,100,50)
 TeleopText = pygame.font.SysFont("Arial", 20).render("Teleop", True, (0,0,0))
@@ -94,6 +94,30 @@ AllianceTextRect = AllianceText.get_rect()
 AllianceTextRect.center = Alliance.center
 AllianceValue = True
 
+Intake = pygame.Rect(120,130,100,50)
+IntakeText = pygame.font.SysFont("Arial", 20).render("Intake", True, (0,0,0))
+IntakeTextRect = IntakeText.get_rect()
+IntakeTextRect.center = Intake.center
+IntakeValue = False
+
+Outtake = pygame.Rect(120,190,100,50)
+OuttakeText = pygame.font.SysFont("Arial", 20).render("Outtake", True, (0,0,0))
+OuttakeTextRect = OuttakeText.get_rect()
+OuttakeTextRect.center = Outtake.center
+OuttakeValue = False
+
+Shooter = pygame.Rect(120,250,100,50)
+ShooterText = pygame.font.SysFont("Arial", 20).render("Shooter", True, (0,0,0))
+ShooterTextRect = ShooterText.get_rect()
+ShooterTextRect.center = Shooter.center
+ShooterValue = False
+
+Climber = pygame.Rect(120,310,100,50)
+ClimberText = pygame.font.SysFont("Arial", 20).render("Climber", True, (0,0,0))
+ClimberTextRect = ClimberText.get_rect()
+ClimberTextRect.center = Climber.center
+ClimberValue = False
+
 
 #create a window mainloop
 robotTime = 0
@@ -130,6 +154,22 @@ while running:
             if Alliance.collidepoint(event.pos):
                 AllianceValue = not AllianceValue
                 FMS.putBoolean("IsRedAlliance", AllianceValue)
+            #Toggle the Intake value
+            if Intake.collidepoint(event.pos):
+                IntakeValue = not IntakeValue
+                LC.putBoolean("Intake_Flag", IntakeValue)
+            #Toggle the Outtake value
+            if Outtake.collidepoint(event.pos):
+                OuttakeValue = not OuttakeValue
+                LC.putBoolean("Outtake_Flag", OuttakeValue)
+            #Toggle the Shooter value
+            if Shooter.collidepoint(event.pos):
+                ShooterValue = not ShooterValue
+                LC.putBoolean("Shooting_Flag", ShooterValue)
+            #Toggle the Climber value
+            if Climber.collidepoint(event.pos):
+                ClimberValue = not ClimberValue
+                LC.putBoolean("Climber_Flag", ClimberValue)
 
     #Render the buttons based on their state, green if true, red if false
     if EnabledValue:
@@ -191,6 +231,38 @@ while running:
     else:
         pygame.draw.rect(window, (0,0,255), Alliance)
         window.blit(AllianceText, AllianceTextRect)
+
+    #if intake value is true, display as green, otherwise, display as red
+    if IntakeValue:
+        pygame.draw.rect(window, (0,255,0), Intake)
+        window.blit(IntakeText, IntakeTextRect)
+    else:
+        pygame.draw.rect(window, (255,0,0), Intake)
+        window.blit(IntakeText, IntakeTextRect)
+
+    #if outtake value is true, display as green, otherwise, display as red
+    if OuttakeValue:
+        pygame.draw.rect(window, (0,255,0), Outtake)
+        window.blit(OuttakeText, OuttakeTextRect)
+    else:
+        pygame.draw.rect(window, (255,0,0), Outtake)
+        window.blit(OuttakeText, OuttakeTextRect)
+
+    #if shooter value is true, display as green, otherwise, display as red
+    if ShooterValue:
+        pygame.draw.rect(window, (0,255,0), Shooter)
+        window.blit(ShooterText, ShooterTextRect)
+    else:
+        pygame.draw.rect(window, (255,0,0), Shooter)
+        window.blit(ShooterText, ShooterTextRect)
+
+    #if climber value is true, display as green, otherwise, display as red
+    if ClimberValue:
+        pygame.draw.rect(window, (0,255,0), Climber)
+        window.blit(ClimberText, ClimberTextRect)
+    else:
+        pygame.draw.rect(window, (255,0,0), Climber)
+        window.blit(ClimberText, ClimberTextRect)
 
 
     #Draw every pixel from the network table starting from neopixel0 to neopixel79

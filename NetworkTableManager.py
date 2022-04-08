@@ -84,13 +84,13 @@ class NetworkTableManager:
         return self.SD.getValue("RobotTime", 0)
 
     def isIntakeRunning(self):
-        return bool(self.SD.getBoolean("Intake_Flag", 0))
+        return bool(self.LC.getBoolean("Intake_Flag", 0))
 
     def isShooterRunning(self):
-        return bool(self.SD.getBoolean("Shooting_Flag", 0))
+        return bool(self.LC.getBoolean("Shooting_Flag", 0))
     
     def isOuttakeRunning(self):
-        return bool(self.SD.getBoolean("Outtake_Flag", 0))
+        return bool(self.LC.getBoolean("Outtake_Flag", 0))
 
     def getAutonomousMode(self):
         return self.SD.getValue("AutonSelection", 1)
@@ -102,4 +102,4 @@ class NetworkTableManager:
         return self.SD.getValue("MaxVelocity", 1)
 
     def isClimberRunning(self):
-        return bool(self.SD.getBoolean("Climber_Flag", False))
+        return bool(self.LC.getBoolean("Climber_Flag", False))
