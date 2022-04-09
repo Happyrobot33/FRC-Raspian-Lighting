@@ -78,11 +78,10 @@ def mergeLEDs(LeftBumperZone, RightBumperZone, IntakeZone):
 
 def pushLEDs():
     global pixels
-    LeftBumperZoneGamma = Patterns.correctGamma(LeftBumperZone)
-    RightBumperZoneGamma = Patterns.correctGamma(RightBumperZone)
-    IntakeZoneGamma = Patterns.correctGamma(IntakeZone)
-    NDpixels = mergeLEDs(LeftBumperZoneGamma, RightBumperZoneGamma, IntakeZoneGamma)
-    NTM.sendPixelsToNetworkTables(LeftBumperZoneGamma, RightBumperZoneGamma, IntakeZoneGamma)
+    #LeftBumperZoneGamma = Patterns.correctGamma(LeftBumperZone)
+    #RightBumperZoneGamma = Patterns.correctGamma(RightBumperZone)
+    #IntakeZoneGamma = Patterns.correctGamma(IntakeZone)
+    NDpixels = mergeLEDs(LeftBumperZone, RightBumperZone, IntakeZone)
     #copy NDpixels into pixels manually
     if OnHardware:
         for i in range(len(NDpixels)):
@@ -101,6 +100,7 @@ def pushLEDs():
         bytes = 0
         for i in range(len(NDpixels)):
             bytes += NDpixels[i].tobytes().__len__()
+        NTM.sendPixelsToNetworkTables(LeftBumperZoneGamma, RightBumperZoneGamma, IntakeZoneGamma)
         time.sleep(0.001 * ((bytes // 100) + 1))
     pass
 
@@ -344,7 +344,7 @@ if __name__ == "__main__":
         NTM.sendFPS(FPS)
         FPS = Clock.get_fps()
 
-        if toPrint == 0:
+        if toPrint == 1:
             toPrint = 0
             print("FPS: ", str(Clock.get_fps()) + "                                                                                               ",
                 "\nFPS Adjustment Value: ", syncWithFrameRate(20),

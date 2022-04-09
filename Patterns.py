@@ -246,11 +246,11 @@ gammaCorrectionLookupTable = np.array(
 #return a gamma corrected array
 def correctGamma(LEDArray):
     global gammaCorrectionLookupTable
-    #create a new array to store the corrected values called gammaCorrectedArray filled with tuples
-    gammaCorrectedArray = np.empty((len(LEDArray), 3), dtype=np.float32)
+    #create a new array to store the corrected values called gammaCorrectedArray filled with tuples initialized to 0
+    gammaCorrectedArray = np.zeros((LEDArray.shape[0], LEDArray.shape[1]), dtype=np.uint8)
     #loop through the image and apply the gamma correction from the lookup table
     for i in range(len(gammaCorrectedArray)):
-        gammaCorrectedArray[i] = np.multiply(gammaCorrectedArray[i], gammaCorrectionLookupTable[i])
+        gammaCorrectedArray[i] = np.multiply(LEDArray[i], gammaCorrectionLookupTable[i])
     #return the gamma corrected array
     return gammaCorrectedArray
 
