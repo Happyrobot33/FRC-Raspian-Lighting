@@ -1,6 +1,7 @@
 from glob import glob
 import math
 import time
+from typing import Pattern
 import numpy as np
 import platform
 import pygame
@@ -66,7 +67,10 @@ IntakeZone = [IntakeLEDCount]
 # Fill IntakeZone with (BLACK) using numpy
 IntakeZone = np.zeros((IntakeLEDCount, 3), dtype=int)
 
-NTM = NTM.NetworkTableManager(BumperLEDCount, IntakeLEDCount)
+if OnHardware:
+    NTM = NTM.NetworkTableManager(BumperLEDCount, IntakeLEDCount)
+else:
+    NTM = NTM.NetworkTableManager(BumperLEDCount, IntakeLEDCount, "LocalHost")
 
 # create a function that takes in arrays and outputs a single merged array
 def mergeLEDs(LeftBumperZone, RightBumperZone, IntakeZone):
@@ -100,7 +104,7 @@ def pushLEDs():
         bytes = 0
         for i in range(len(NDpixels)):
             bytes += NDpixels[i].tobytes().__len__()
-        NTM.sendPixelsToNetworkTables(LeftBumperZoneGamma, RightBumperZoneGamma, IntakeZoneGamma)
+        NTM.sendPixelsToNetworkTables(LeftBumperZone, RightBumperZone, IntakeZone)
         time.sleep(0.001 * ((bytes // 100) + 1))
     pass
 
@@ -158,7 +162,7 @@ def PREGAME():
             Patterns.fillLEDs(RightBumperZone, GREEN)
             CAN_TRANSITION = True
             pushLEDs()
-            FPS_SAFE_SLEEP(4)
+            FPS_SAFE_SLEEP(2)
             #time.sleep(4)
 
     else:
@@ -213,10 +217,23 @@ def AUTON_MODE_OVERLAY():
 #2 Ball Normal - Purple with two 6 pixel yellow strips in the middle
 #2 Ball Short - Purple with three 6 pixel yellow strips in the middle
 #These also need to update continously as they are changed by the driverstation
+Increment = 0
 def AUTONOMOUS():
+    global Increment
     ALLIANCE_COLOR_MACRO()
     AUTON_MODE_OVERLAY()
-    VELOCITY_OVERLAY()
+    #VELOCITY_OVERLAY()
+
+    Increment += syncWithFrameRate(100)
+    if NTM.isRedAlliance() == True:
+        AllianceColor = RED
+    else:
+        AllianceColor = BLUE
+    Patterns.segmentedColor(LeftBumperZone, [AllianceColor, YELLOW, AllianceColor], 1)
+    Patterns.shiftLEDs(LeftBumperZone, math.sin(Increment / 40) * 40)
+    Patterns.segmentedColor(RightBumperZone, [AllianceColor, YELLOW, AllianceColor], 1)
+    Patterns.shiftLEDs(RightBumperZone, math.sin(-Increment / 40) * 40)
+    Patterns.shiftLEDs(IntakeZone, Increment / 10)
 
 
 def VELOCITY_OVERLAY():
@@ -247,38 +264,34 @@ def ALLIANCE_COLOR_MACRO():
 #On Puke - Strobe the intake so it has a "Pushing" Pattern down its length
 #On Climb Detect - Something flashy?????? Unknown, possibly something integrating the current alliance color
 #Warning system - Possibly integrating a system to flash colors at ~40 seconds to indicate it is time to climb
-Increment = 0
+ClimbStartedFlag = False
 def TELEOP():
     global Increment
+    global ClimbStartedFlag
     ALLIANCE_COLOR_MACRO()
 
     #set the intake to purple
     Patterns.fillLEDs(IntakeZone, PURPLE)
 
-    VELOCITY_OVERLAY()
-
-    #check if time is below 40 seconds
-    if NTM.getRobotTime() > 35 and NTM.getRobotTime() < 45:
-        if NTM.getRobotTime() % 2 == 0:
-            Patterns.fillLEDs(IntakeZone, YELLOW)
-        else:
-            Patterns.fillLEDs(IntakeZone, PURPLE)
+    #VELOCITY_OVERLAY()
 
     #Check if the intake is running
     if NTM.isIntakeRunning():
         Increment += syncWithFrameRate(100)
         #color fade to yellow
-        Patterns.fadeLEDs(IntakeZone, PURPLE, YELLOW)
+        #Patterns.fadeLEDs(IntakeZone, PURPLE, YELLOW)
+        Patterns.percentageFillLEDs(IntakeZone, YELLOW, 0.25)
         Patterns.shiftLEDs(IntakeZone, Increment)
     #Check if the intake is puking
     elif NTM.isOuttakeRunning():
         Increment += syncWithFrameRate(100)
         #color fade to purple
-        Patterns.fadeLEDs(IntakeZone, YELLOW, PURPLE)
+        #Patterns.fadeLEDs(IntakeZone, YELLOW, PURPLE)
+        Patterns.percentageFillLEDs(IntakeZone, YELLOW, 0.25)
         Patterns.shiftLEDs(IntakeZone, -Increment)
     #Check if the intake is shooting
     elif NTM.isShooterRunning():
-        Increment += syncWithFrameRate(1)
+        Increment += syncWithFrameRate(2)
         Patterns.fillLEDs(IntakeZone, YELLOW)
         if Increment <= 1:
             Patterns.fillLEDs(IntakeZone, YELLOW)
@@ -287,29 +300,45 @@ def TELEOP():
             Patterns.fillLEDs(IntakeZone, YELLOW)
             Patterns.percentageFillLEDs(IntakeZone, PURPLE, (Increment - 2) * 2)
     #Check if the climber is running
-    elif NTM.isClimberRunning():
+    elif NTM.isClimberRunning() or ClimbStartedFlag:
+        ClimbStartedFlag = True
         Increment += syncWithFrameRate(100)
         
         #Slide an "ant" across the bumpers, with the current alliance color
-        if NTM.isRedAlliance():
-            Patterns.fadeLEDs(LeftBumperZone, RED, YELLOW)
-            Patterns.fadeLEDs(RightBumperZone, RED, YELLOW)
-        else:
-            Patterns.fadeLEDs(LeftBumperZone, BLUE, YELLOW)
-            Patterns.fadeLEDs(RightBumperZone, BLUE, YELLOW)
+        AllianceColor = GetAllianceColor()
+        Patterns.segmentedColor(LeftBumperZone, [AllianceColor, YELLOW, AllianceColor], 1)
         Patterns.shiftLEDs(LeftBumperZone, Increment)
-        Patterns.shiftLEDs(RightBumperZone, Increment)
+        Patterns.segmentedColor(RightBumperZone, [AllianceColor, YELLOW, AllianceColor], 1)
+        Patterns.shiftLEDs(RightBumperZone, -Increment)
 
         Patterns.segmentedColor(IntakeZone, [PURPLE, YELLOW, PURPLE], 1)
-        Patterns.shiftLEDs(IntakeZone, math.sin(Increment / 40) * 20)
+        Patterns.shiftLEDs(IntakeZone, math.sin(Increment / 40) * 17)
     else:
         Increment = 0 #reset the increment to ensure it doesnt get too big and cause an error
+    
+    #check if time is below 40 seconds
+    if NTM.getRobotTime() > 35 and NTM.getRobotTime() < 45:
+        if math.sin(NTM.getRobotTime() * 10) > 0:
+            Patterns.fillLEDs(LeftBumperZone, YELLOW)
+            Patterns.fillLEDs(RightBumperZone, YELLOW)
+            Patterns.fillLEDs(IntakeZone, YELLOW)
+        else:
+            Patterns.fillLEDs(LeftBumperZone, PURPLE)
+            Patterns.fillLEDs(RightBumperZone, PURPLE)
+            Patterns.fillLEDs(IntakeZone, PURPLE)
     pass
+
+def GetAllianceColor():
+    if NTM.isRedAlliance() == True:
+        AllianceColor = RED
+    else:
+        AllianceColor = BLUE
+    return AllianceColor
 
 #On Disable / Match end - Revert to alliance color with sliding purple strips???
 def ENDGAME():
     ALLIANCE_COLOR_MACRO()
-    Patterns.fillLEDs(IntakeZone, PURPLE)
+    Patterns.fillLEDs(IntakeZone, GetAllianceColor())
     pass
 
 
@@ -329,11 +358,13 @@ if __name__ == "__main__":
     while True:
         PREGAME()
         if NTM.isDSAttached():
+            if NTM.getRobotTime() > 100 or NTM.isAutonomous():
+                ClimbStartedFlag = False
             if NTM.isEnabled() and NTM.isAutonomous():
                 AUTONOMOUS()
             if NTM.isEnabled() and NTM.isTeleop():
                 TELEOP()
-            if NTM.isGameEnded():
+            if NTM.getRobotTime() <= -1:
                 ENDGAME()
 
         if NTM.isEStopped():
@@ -354,7 +385,8 @@ if __name__ == "__main__":
                 "\nIntake LED Count: " + str(IntakeLEDCount),
                 "\nTotal LED Count: " + str(TotalLEDS),
                 "\nSendable Chooser: " + str(NTM.getAutonomousMode()),
-                end="\033[A\033[A\033[A\033[A\033[A\033[A\033[A\r")
+                "\nRobot Time: " + str(NTM.getRobotTime()),
+                end="\033[A\033[A\033[A\033[A\033[A\033[A\033[A\033[A\r")
         else:
             toPrint += 1
 

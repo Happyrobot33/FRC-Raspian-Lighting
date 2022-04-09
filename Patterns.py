@@ -131,7 +131,7 @@ def addTuples(tuple1, tuple2):
     return (tuple1[0] + tuple2[0], tuple1[1] + tuple2[1], tuple1[2] + tuple2[2])
 
 def scaleTuple(tuple1, scale):
-    return (tuple1[0] * scale, tuple1[1] * scale, tuple1[2] * scale)
+    return (tuple1[0] * round(scale,1), tuple1[1] * round(scale,1), tuple1[2] * round(scale,1))
 
 def lerpBetweenTuples(tuple1, tuple2, scale):
     return addTuples(scaleTuple(subtractTuples(tuple2, tuple1), scale), tuple1)

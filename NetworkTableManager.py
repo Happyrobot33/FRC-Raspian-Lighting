@@ -64,10 +64,6 @@ class NetworkTableManager:
     def isTeleop(self):
         return bool(self.isEnabled() and not self.isAutonomous())
 
-    #TODO: implement actual logic based on time
-    def isGameEnded(self):
-        return False
-
     def isEnabled(self):
         return bool(self.getFMSData() & 0b00000001)
 

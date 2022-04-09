@@ -27,7 +27,7 @@ NetworkTables.initialize()
 SD = NetworkTables.getTable("SmartDashboard")
 FMS = NetworkTables.getTable("FMSInfo")
 #Create a new network table subtable called LightingControl, abbreviated LC
-LC = SD.getSubTable("LightingControl")
+LC = NetworkTables.getTable("LightingControl")
 #Create a new network table subtable under LC called Pixels, abbreviated PX
 PX = LC.getSubTable("Pixels")
 #Create a new network table subtable under Pixels called LeftBumpers, abbreviated LB
@@ -150,7 +150,7 @@ while running:
                 DSConnectionValue = not DSConnectionValue
             if AutonomousMode.collidepoint(event.pos):
                 AutonomousModeValue = ((AutonomousModeValue + 1) % 3) + 1
-                SD.putNumber("AutonSelection", AutonomousModeValue)
+                LC.putNumber("AutonSelection", AutonomousModeValue)
             #Toggle the Alliance value
             if Alliance.collidepoint(event.pos):
                 AllianceValue = not AllianceValue
@@ -410,6 +410,8 @@ while running:
     time.sleep(0.0625)
     #increment the robot time by 0.0625 if enabled, if disabled set the robot time to 0
     if EnabledValue:
-        robotTime += 0.0625
+        robotTime -= 0.0625
+        if robotTime < 0:
+            robotTime = -1
     else:
-        robotTime = 0
+        robotTime = 60 * 2
