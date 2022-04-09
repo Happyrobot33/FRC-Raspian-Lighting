@@ -19,11 +19,11 @@ BLUE = (0, 0, 255)
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 
-#use this to make a value independent of the frame rate
+#use this to make a value independent of the frame rate based on a desired FPS
 FPS = 1
 def syncWithFrameRate(Value):
     global FPS
-    return Value / max(FPS, 1)
+    return Value * (20 / max(FPS, 1))
 
 def FPS_SAFE_SLEEP(Value):
     global FPS
@@ -113,39 +113,33 @@ def pushLEDs():
 #Upon FMS Connection - Bumpers go Green
 #Upon Driver Station Connection - Intake goes green, followed by the whole robot then fading to our alliance color
 PREGAME_COUNTER = 0
-INCREMENTING = True
 CAN_TRANSITION = False
+Increment = 0
 def PREGAME():
     global PREGAME_COUNTER
-    global INCREMENTING
+    global Increment
     global CAN_TRANSITION
 
     if not CAN_TRANSITION:
         #Create a variable that bounces between 0 and 1
-        if PREGAME_COUNTER < 1 and INCREMENTING:
-            PREGAME_COUNTER += syncWithFrameRate(0.5)
-        elif PREGAME_COUNTER > 0 and not INCREMENTING:
-            PREGAME_COUNTER -= syncWithFrameRate(0.5)
-        elif PREGAME_COUNTER >= 1:
-            INCREMENTING = False
-        elif PREGAME_COUNTER <= 0:
-            INCREMENTING = True
+        Increment += syncWithFrameRate(0.05)
+        PREGAME_COUNTER = math.sin(Increment)
 
         #fade between purple, to black, to yellow, to black on all IntakeZone, LeftBumperZone, and RightBumperZone. do not use tuples
-        if PREGAME_COUNTER < 0.5:
+        if PREGAME_COUNTER >= 0:
             Patterns.fadeBetweenColors(
-                IntakeZone, PURPLE, BLACK, PREGAME_COUNTER * 2)
+                IntakeZone, BLACK, PURPLE, PREGAME_COUNTER)
             Patterns.fadeBetweenColors(
-                LeftBumperZone, PURPLE, BLACK, PREGAME_COUNTER * 2)
+                LeftBumperZone, BLACK, PURPLE, PREGAME_COUNTER)
             Patterns.fadeBetweenColors(
-                RightBumperZone, PURPLE, BLACK, PREGAME_COUNTER * 2)
-        elif PREGAME_COUNTER >= 0.5:
+                RightBumperZone, BLACK, PURPLE, PREGAME_COUNTER)
+        else:
             Patterns.fadeBetweenColors(
-                IntakeZone, BLACK, YELLOW, (PREGAME_COUNTER - 0.5) * 2)
+                IntakeZone, BLACK, YELLOW, -PREGAME_COUNTER)
             Patterns.fadeBetweenColors(
-                LeftBumperZone, BLACK, YELLOW, (PREGAME_COUNTER - 0.5) * 2)
+                LeftBumperZone, BLACK, YELLOW, -PREGAME_COUNTER)
             Patterns.fadeBetweenColors(
-                RightBumperZone, BLACK, YELLOW, (PREGAME_COUNTER - 0.5) * 2)
+                RightBumperZone, BLACK, YELLOW, -PREGAME_COUNTER)
 
         #if we have FMS Connection, Set bumpers to green
         if NTM.isFMSAttached():
@@ -166,7 +160,7 @@ def PREGAME():
             #time.sleep(4)
 
     else:
-        fadeSpeed = syncWithFrameRate(3)
+        fadeSpeed = syncWithFrameRate(5 * 0.1)
         #Fade to alliance color on all LEDs
         if NTM.isRedAlliance() == True:
             Patterns.fadeToColor(LeftBumperZone, RED, fadeSpeed)
@@ -180,7 +174,6 @@ def PREGAME():
         if NTM.isDSAttached() == False:
             CAN_TRANSITION = False
             PREGAME_COUNTER = 0
-            INCREMENTING = True
             pass
 
 #Handles the overlay of what auton mode we are in
@@ -196,17 +189,15 @@ def AUTON_MODE_OVERLAY():
     if CURRENTAUTONMODE != PREVIOUSAUTONMODE:
         Patterns.fillLEDs(IntakeZone, PURPLE)
 
-    FadeSpeed = syncWithFrameRate(7)
-
     if CURRENTAUTONMODE == 1:
         #set the intake to purple, yellow, purple using segmentedColor
-        Patterns.segmentedColor(IntakeZone, [PURPLE, YELLOW, PURPLE], FadeSpeed)
+        Patterns.segmentedColor(IntakeZone, [PURPLE, YELLOW, PURPLE], 1)
     elif CURRENTAUTONMODE == 2:
         #set the intake to purple, yellow, purple, yellow, purple using segmentedColor
-        Patterns.segmentedColor(IntakeZone, [PURPLE, YELLOW, PURPLE, YELLOW, PURPLE], FadeSpeed)
+        Patterns.segmentedColor(IntakeZone, [PURPLE, YELLOW, PURPLE, YELLOW, PURPLE], 1)
     elif CURRENTAUTONMODE == 3:
         #set the intake to purple, yellow, purple, yellow, purple, yellow, purple using segmentedColor
-        Patterns.segmentedColor(IntakeZone, [PURPLE, YELLOW, PURPLE, YELLOW, PURPLE, YELLOW, PURPLE], FadeSpeed)
+        Patterns.segmentedColor(IntakeZone, [PURPLE, YELLOW, PURPLE, YELLOW, PURPLE, YELLOW, PURPLE], 1)
     
     PREVIOUSAUTONMODE = CURRENTAUTONMODE
 
@@ -217,14 +208,13 @@ def AUTON_MODE_OVERLAY():
 #2 Ball Normal - Purple with two 6 pixel yellow strips in the middle
 #2 Ball Short - Purple with three 6 pixel yellow strips in the middle
 #These also need to update continously as they are changed by the driverstation
-Increment = 0
 def AUTONOMOUS():
     global Increment
     ALLIANCE_COLOR_MACRO()
     AUTON_MODE_OVERLAY()
     #VELOCITY_OVERLAY()
 
-    Increment += syncWithFrameRate(100)
+    Increment += syncWithFrameRate(5)
     if NTM.isRedAlliance() == True:
         AllianceColor = RED
     else:
@@ -233,7 +223,7 @@ def AUTONOMOUS():
     Patterns.shiftLEDs(LeftBumperZone, math.sin(Increment / 40) * 40)
     Patterns.segmentedColor(RightBumperZone, [AllianceColor, YELLOW, AllianceColor], 1)
     Patterns.shiftLEDs(RightBumperZone, math.sin(-Increment / 40) * 40)
-    Patterns.shiftLEDs(IntakeZone, Increment / 10)
+    Patterns.shiftLEDs(IntakeZone, Increment / 5)
 
 
 def VELOCITY_OVERLAY():
@@ -277,21 +267,21 @@ def TELEOP():
 
     #Check if the intake is running
     if NTM.isIntakeRunning():
-        Increment += syncWithFrameRate(100)
+        Increment += syncWithFrameRate(5)
         #color fade to yellow
         #Patterns.fadeLEDs(IntakeZone, PURPLE, YELLOW)
         Patterns.percentageFillLEDs(IntakeZone, YELLOW, 0.25)
         Patterns.shiftLEDs(IntakeZone, Increment)
     #Check if the intake is puking
     elif NTM.isOuttakeRunning():
-        Increment += syncWithFrameRate(100)
+        Increment += syncWithFrameRate(5)
         #color fade to purple
         #Patterns.fadeLEDs(IntakeZone, YELLOW, PURPLE)
         Patterns.percentageFillLEDs(IntakeZone, YELLOW, 0.25)
         Patterns.shiftLEDs(IntakeZone, -Increment)
     #Check if the intake is shooting
     elif NTM.isShooterRunning():
-        Increment += syncWithFrameRate(2)
+        Increment += syncWithFrameRate(0.1)
         Patterns.fillLEDs(IntakeZone, YELLOW)
         if Increment <= 1:
             Patterns.fillLEDs(IntakeZone, YELLOW)
@@ -302,14 +292,14 @@ def TELEOP():
     #Check if the climber is running
     elif NTM.isClimberRunning() or ClimbStartedFlag:
         ClimbStartedFlag = True
-        Increment += syncWithFrameRate(100)
+        Increment += syncWithFrameRate(10)
         
         #Slide an "ant" across the bumpers, with the current alliance color
         AllianceColor = GetAllianceColor()
         Patterns.segmentedColor(LeftBumperZone, [AllianceColor, YELLOW, AllianceColor], 1)
-        Patterns.shiftLEDs(LeftBumperZone, Increment)
+        Patterns.shiftLEDs(LeftBumperZone, Increment / 2)
         Patterns.segmentedColor(RightBumperZone, [AllianceColor, YELLOW, AllianceColor], 1)
-        Patterns.shiftLEDs(RightBumperZone, -Increment)
+        Patterns.shiftLEDs(RightBumperZone, -Increment / 2)
 
         Patterns.segmentedColor(IntakeZone, [PURPLE, YELLOW, PURPLE], 1)
         Patterns.shiftLEDs(IntakeZone, math.sin(Increment / 40) * 17)
@@ -378,7 +368,7 @@ if __name__ == "__main__":
         if toPrint == 1:
             toPrint = 0
             print("FPS: ", str(Clock.get_fps()) + "                                                                                               ",
-                "\nFPS Adjustment Value: ", syncWithFrameRate(20),
+                "\nFPS Adjustment Value: ", syncWithFrameRate(1),
                 "\nNetwork Table Ip: " + str(NTM.getRemoteAddress()),
                 "\nControl Word: " + str(NTM.getFMSControlData()) + "                                                                                               ",
                 "\nBumper LED Count: " + str(BumperLEDCount),
