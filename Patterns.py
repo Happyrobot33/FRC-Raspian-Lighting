@@ -293,7 +293,7 @@ def fadeBetweenColors(LEDArray, Color1, Color2, percentage):
         percentage = 0
     for i in range(len(LEDArray)):
         LEDArray[i] = lerpBetweenTuples(Color1, Color2, percentage)
-        LEDArray[i] = limitRGB(LEDArray[i])
+        #LEDArray[i] = limitRGB(LEDArray[i])
     pass
 
 def randomStars(LEDArray, color):
