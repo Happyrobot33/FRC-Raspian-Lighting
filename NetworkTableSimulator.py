@@ -378,7 +378,7 @@ while running:
     pygame.display.update()
 
     #update the robot time
-    SD.putNumber("RobotTime", robotTime)
+    LC.putNumber("RobotTime", robotTime)
 
     #The first bits purpose is Unknown
     #the second bits purpose is Unknown

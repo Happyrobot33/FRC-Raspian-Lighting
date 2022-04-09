@@ -108,6 +108,27 @@ def pushLEDs():
         time.sleep(0.001 * ((bytes // 100) + 1))
     pass
 
+StartupIncrement = 0
+STARTUP_COMPLETE = False
+def STARTUP():
+    global StartupIncrement
+    global STARTUP_COMPLETE
+    #set the initial color to black
+    Patterns.fillLEDs(IntakeZone, BLACK)
+    Patterns.fillLEDs(LeftBumperZone, BLACK)
+    Patterns.fillLEDs(RightBumperZone, BLACK)
+
+    StartupIncrement += syncWithFrameRate(0.01)
+    if StartupIncrement < 1:
+        Patterns.percentageFillLEDsMirrored(LeftBumperZone, PURPLE, StartupIncrement)
+        Patterns.percentageFillLEDsMirrored(RightBumperZone, PURPLE, StartupIncrement)
+        Patterns.percentageFillLEDsMirrored(IntakeZone, PURPLE, StartupIncrement)
+    elif StartupIncrement >= 1 and StartupIncrement < 2:
+        Patterns.fadeBetweenColors(LeftBumperZone, PURPLE, BLACK, StartupIncrement - 1)
+        Patterns.fadeBetweenColors(RightBumperZone, PURPLE, BLACK, StartupIncrement - 1)
+        Patterns.fadeBetweenColors(IntakeZone, PURPLE, BLACK, StartupIncrement - 1)
+    else:
+        STARTUP_COMPLETE = True
 
 #No Connection - Flashing Purple
 #Upon FMS Connection - Bumpers go Green
@@ -325,7 +346,7 @@ def GetAllianceColor():
         AllianceColor = BLUE
     return AllianceColor
 
-#On Disable / Match end - Revert to alliance color with sliding purple strips???
+#On Disable / Match end - Revert to alliance color with sliding purple strips??ss?
 def ENDGAME():
     ALLIANCE_COLOR_MACRO()
     Patterns.fillLEDs(IntakeZone, GetAllianceColor())
@@ -345,8 +366,13 @@ toPrint = 0
 Clock = pygame.time.Clock()
 #main loop
 if __name__ == "__main__":
+    FPS_SAFE_SLEEP(1)
     while True:
-        PREGAME()
+        if not STARTUP_COMPLETE:
+            STARTUP()
+        else:
+            PREGAME()
+
         if NTM.isDSAttached():
             if NTM.getRobotTime() > 100 or NTM.isAutonomous():
                 ClimbStartedFlag = False
