@@ -280,7 +280,7 @@ def fadeToColor(LEDArray, Color1, percentage):
         percentage = 0
     for i in range(len(LEDArray)):
         LEDArray[i] = lerpBetweenTuples(LEDArray[i], Color1, percentage)
-        LEDArray[i] = limitRGB(LEDArray[i])
+        #LEDArray[i] = limitRGB(LEDArray[i])
     pass
 
 #define a function that takes in a LEDArray and uses a percentage to fade between two different colors
