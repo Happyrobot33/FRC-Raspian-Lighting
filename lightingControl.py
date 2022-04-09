@@ -95,7 +95,7 @@ def pushLEDs():
         #MicroSecondsForAllPixels = len(NDpixels) * MicroSecondsPerPixel
         #time.sleep(MicroSecondsForAllPixels / 1000 * 6)
         
-        #This code is much accurate, even though it seems more inneficient.
+        #This code is more accurate, even though it seems more inneficient.
         #This is taken directly from the neopixel librarys calculations
         #about 100ms per 100 bytes
         bytes = 0
