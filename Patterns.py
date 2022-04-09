@@ -124,47 +124,6 @@ def percentageFillLEDsMirrored(LEDArray, Color1, percentage):
     percentageFillLEDs(LEDArray, Color1, percentage / 2)
     percentageFillLEDs(LEDArray, Color1, percentage / 2, True)
 
-def rgb_to_hsv(r, g, b):
-    r, g, b = r/255.0, g/255.0, b/255.0
-    mx = max(r, g, b)
-    mn = min(r, g, b)
-    df = mx-mn
-    if mx == mn:
-        h = 0
-    elif mx == r:
-        h = (60 * ((g-b)/df) + 360) % 360
-    elif mx == g:
-        h = (60 * ((b-r)/df) + 120) % 360
-    elif mx == b:
-        h = (60 * ((r-g)/df) + 240) % 360
-    if mx == 0:
-        s = 0
-    else:
-        s = df/mx
-    v = mx
-    return h, s, v
-
-def hsv_to_rgb(h, s, v):
-    h = float(h)
-    s = float(s)
-    v = float(v)
-    h60 = h / 60.0
-    h60f = math.floor(h60)
-    hi = int(h60f) % 6
-    f = h60 - h60f
-    p = v * (1 - s)
-    q = v * (1 - f * s)
-    t = v * (1 - (1 - f) * s)
-    r, g, b = 0, 0, 0
-    if hi == 0: r, g, b = v, t, p
-    elif hi == 1: r, g, b = q, v, p
-    elif hi == 2: r, g, b = p, v, t
-    elif hi == 3: r, g, b = p, q, v
-    elif hi == 4: r, g, b = t, p, v
-    elif hi == 5: r, g, b = v, p, q
-    r, g, b = int(r * 255), int(g * 255), int(b * 255)
-    return r, g, b
-
 def subtractTuples(tuple1, tuple2):
     return (tuple1[0] - tuple2[0], tuple1[1] - tuple2[1], tuple1[2] - tuple2[2])
 
@@ -177,20 +136,122 @@ def scaleTuple(tuple1, scale):
 def lerpBetweenTuples(tuple1, tuple2, scale):
     return addTuples(scaleTuple(subtractTuples(tuple2, tuple1), scale), tuple1)
 
+gammaCorrectionLookupTable = np.array(
+    [
+        [0, 0, 0],
+        [0.01, 0.01, 0.01],
+        [0.02, 0.02, 0.02],
+        [0.03, 0.03, 0.03],
+        [0.04, 0.04, 0.04],
+        [0.05, 0.05, 0.05],
+        [0.06, 0.06, 0.06],
+        [0.07, 0.07, 0.07],
+        [0.08, 0.08, 0.08],
+        [0.09, 0.09, 0.09],
+        [0.1, 0.1, 0.1],
+        [0.11, 0.11, 0.11],
+        [0.12, 0.12, 0.12],
+        [0.13, 0.13, 0.13],
+        [0.14, 0.14, 0.14],
+        [0.15, 0.15, 0.15],
+        [0.16, 0.16, 0.16],
+        [0.17, 0.17, 0.17],
+        [0.18, 0.18, 0.18],
+        [0.19, 0.19, 0.19],
+        [0.2, 0.2, 0.2],
+        [0.21, 0.21, 0.21],
+        [0.22, 0.22, 0.22],
+        [0.23, 0.23, 0.23],
+        [0.24, 0.24, 0.24],
+        [0.25, 0.25, 0.25],
+        [0.26, 0.26, 0.26],
+        [0.27, 0.27, 0.27],
+        [0.28, 0.28, 0.28],
+        [0.29, 0.29, 0.29],
+        [0.3, 0.3, 0.3],
+        [0.31, 0.31, 0.31],
+        [0.32, 0.32, 0.32],
+        [0.33, 0.33, 0.33],
+        [0.34, 0.34, 0.34],
+        [0.35, 0.35, 0.35],
+        [0.36, 0.36, 0.36],
+        [0.37, 0.37, 0.37],
+        [0.38, 0.38, 0.38],
+        [0.39, 0.39, 0.39],
+        [0.4, 0.4, 0.4],
+        [0.41, 0.41, 0.41],
+        [0.42, 0.42, 0.42],
+        [0.43, 0.43, 0.43],
+        [0.44, 0.44, 0.44],
+        [0.45, 0.45, 0.45],
+        [0.46, 0.46, 0.46],
+        [0.47, 0.47, 0.47],
+        [0.48, 0.48, 0.48],
+        [0.49, 0.49, 0.49],
+        [0.5, 0.5, 0.5],
+        [0.51, 0.51, 0.51],
+        [0.52, 0.52, 0.52],
+        [0.53, 0.53, 0.53],
+        [0.54, 0.54, 0.54],
+        [0.55, 0.55, 0.55],
+        [0.56, 0.56, 0.56],
+        [0.57, 0.57, 0.57],
+        [0.58, 0.58, 0.58],
+        [0.59, 0.59, 0.59],
+        [0.6, 0.6, 0.6],
+        [0.61, 0.61, 0.61],
+        [0.62, 0.62, 0.62],
+        [0.63, 0.63, 0.63],
+        [0.64, 0.64, 0.64],
+        [0.65, 0.65, 0.65],
+        [0.66, 0.66, 0.66],
+        [0.67, 0.67, 0.67],
+        [0.68, 0.68, 0.68],
+        [0.69, 0.69, 0.69],
+        [0.7, 0.7, 0.7],
+        [0.71, 0.71, 0.71],
+        [0.72, 0.72, 0.72],
+        [0.73, 0.73, 0.73],
+        [0.74, 0.74, 0.74],
+        [0.75, 0.75, 0.75],
+        [0.76, 0.76, 0.76],
+        [0.77, 0.77, 0.77],
+        [0.78, 0.78, 0.78],
+        [0.79, 0.79, 0.79],
+        [0.8, 0.8, 0.8],
+        [0.81, 0.81, 0.81],
+        [0.82, 0.82, 0.82],
+        [0.83, 0.83, 0.83],
+        [0.84, 0.84, 0.84],
+        [0.85, 0.85, 0.85],
+        [0.86, 0.86, 0.86],
+        [0.87, 0.87, 0.87],
+        [0.88, 0.88, 0.88],
+        [0.89, 0.89, 0.89],
+        [0.9, 0.9, 0.9],
+        [0.91, 0.91, 0.91],
+        [0.92, 0.92, 0.92],
+        [0.93, 0.93, 0.93],
+        [0.94, 0.94, 0.94],
+        [0.95, 0.95, 0.95],
+        [0.96, 0.96, 0.96],
+        [0.97, 0.97, 0.97],
+        [0.98, 0.98, 0.98],
+        [0.99, 0.99, 0.99],
+        [1, 1, 1],
+    ]
+)
 #define a function to correct the gamma of an array
 #LEDArray is an array of tuples
 #return a gamma corrected array
 def correctGamma(LEDArray):
-    gamma = 2.2
-    gammaCorrectedArray = []
-    for i in range(len(LEDArray)):
-        gammaCorrectedArray.append(
-            (
-                math.pow(LEDArray[i][0] / 255, gamma) * 255,
-                math.pow(LEDArray[i][1] / 255, gamma) * 255,
-                math.pow(LEDArray[i][2] / 255, gamma) * 255,
-            )
-        )
+    global gammaCorrectionLookupTable
+    #create a new array to store the corrected values called gammaCorrectedArray filled with tuples
+    gammaCorrectedArray = np.empty((len(LEDArray), 3), dtype=np.float32)
+    #loop through the image and apply the gamma correction from the lookup table
+    for i in range(len(gammaCorrectedArray)):
+        gammaCorrectedArray[i] = np.multiply(gammaCorrectedArray[i], gammaCorrectionLookupTable[i])
+    #return the gamma corrected array
     return gammaCorrectedArray
 
 def limitRGB(rgb):

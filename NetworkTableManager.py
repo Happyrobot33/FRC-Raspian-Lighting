@@ -1,5 +1,8 @@
+from tokenize import String
 from networktables import NetworkTables
 import logging
+
+import networktables
 
 class NetworkTableManager:
     def __init__(self, BumperLEDCount, IntakeLEDCount, ipAddress = "10.36.67.2"):
@@ -11,7 +14,7 @@ class NetworkTableManager:
         self.SD = NetworkTables.getTable("SmartDashboard")
         self.FMS = NetworkTables.getTable("FMSInfo")
         #Create a new network table subtable called LightingControl, abbreviated LC
-        self.LC = self.SD.getSubTable("LightingControl")
+        self.LC = NetworkTables.getTable("LightingControl")
         #Create a new network table subtable under LC called Pixels, abbreviated PX
         self.PX = self.LC.getSubTable("Pixels")
         #Create a new network table subtable under Pixels called LeftBumpers, abbreviated LB
@@ -25,14 +28,18 @@ class NetworkTableManager:
         self.LC.putValue('BumperLength', BumperLEDCount)
         self.LC.putValue('IntakeLength', IntakeLEDCount)
     
+    def roundTuple(self, tuple):
+        #round each value in the tuple to the nearest integer
+        return (round(tuple[0]), round(tuple[1]), round(tuple[2]))
+
     #Send the LED data to the network table, in their corresponding subtable
     def sendPixelsToNetworkTables(self, LeftBumper, RightBumper, Intake):
         for i in range(len(LeftBumper)):
-            self.LB.putNumberArray("neopixel" + str(i), LeftBumper[i])
+            self.LB.putNumberArray("neopixel" + str(i), self.roundTuple(LeftBumper[i]))
         for i in range(len(RightBumper)):
-            self.RB.putNumberArray("neopixel" + str(i), RightBumper[i])
+            self.RB.putNumberArray("neopixel" + str(i), self.roundTuple(RightBumper[i]))
         for i in range(len(Intake)):
-            self.IN.putNumberArray("neopixel" + str(i), Intake[i])
+            self.IN.putNumberArray("neopixel" + str(i), self.roundTuple(Intake[i]))
         pass
 
     def sendFPS(self, FPS):
@@ -93,7 +100,18 @@ class NetworkTableManager:
         return bool(self.LC.getBoolean("Outtake_Flag", 0))
 
     def getAutonomousMode(self):
-        return self.SD.getValue("AutonSelection", 1)
+        chooser = self.LC.getString("AutonMode", "")
+        #three options available
+        #LeavePath1
+        #2 Ball
+        #2 Ball Short
+
+        if chooser == "LeavePath1":
+            return 1
+        elif chooser == "2Ball":
+            return 2
+        else:
+            return 3
 
     def getVelocity(self):
         return self.SD.getValue("Velocity", 0)

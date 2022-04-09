@@ -40,9 +40,9 @@ if OnHardware:
 
 #Front / Back beam count = 9
 #Side Beam Count = 42
-BumperLEDCount = 9 + 9 + 42
+BumperLEDCount = (8 * 2) + 40
 #Single Beam Count = 60
-IntakeLEDCount = 60
+IntakeLEDCount = 49
 TotalLEDS = (1 * IntakeLEDCount) + (2 * BumperLEDCount)
 if OnHardware:
     pixels = neopixel.NeoPixel(board.D18, TotalLEDS, auto_write=False)
@@ -66,7 +66,7 @@ IntakeZone = [IntakeLEDCount]
 # Fill IntakeZone with (BLACK) using numpy
 IntakeZone = np.zeros((IntakeLEDCount, 3), dtype=int)
 
-NTM = NTM.NetworkTableManager(BumperLEDCount, IntakeLEDCount, "localhost")
+NTM = NTM.NetworkTableManager(BumperLEDCount, IntakeLEDCount)
 
 # create a function that takes in arrays and outputs a single merged array
 def mergeLEDs(LeftBumperZone, RightBumperZone, IntakeZone):
@@ -142,7 +142,6 @@ def PREGAME():
                 LeftBumperZone, BLACK, YELLOW, (PREGAME_COUNTER - 0.5) * 2)
             Patterns.fadeBetweenColors(
                 RightBumperZone, BLACK, YELLOW, (PREGAME_COUNTER - 0.5) * 2)
-        pass
 
         #if we have FMS Connection, Set bumpers to green
         if NTM.isFMSAttached():
@@ -259,9 +258,8 @@ def TELEOP():
     VELOCITY_OVERLAY()
 
     #check if time is below 40 seconds
-    #TODO deal with time weirdness
-    if NTM.getRobotTime() > 0:
-        if NTM.getRobotTime() % 0.5 == 0:
+    if NTM.getRobotTime() > 35 and NTM.getRobotTime() < 45:
+        if NTM.getRobotTime() % 2 == 0:
             Patterns.fillLEDs(IntakeZone, YELLOW)
         else:
             Patterns.fillLEDs(IntakeZone, PURPLE)
@@ -355,8 +353,9 @@ if __name__ == "__main__":
                 "\nBumper LED Count: " + str(BumperLEDCount),
                 "\nIntake LED Count: " + str(IntakeLEDCount),
                 "\nTotal LED Count: " + str(TotalLEDS),
-                end="\033[A\033[A\033[A\033[A\033[A\033[A\r")
+                "\nSendable Chooser: " + str(NTM.getAutonomousMode()),
+                end="\033[A\033[A\033[A\033[A\033[A\033[A\033[A\r")
         else:
             toPrint += 1
 
-        Clock.tick(20)
+        Clock.tick()
