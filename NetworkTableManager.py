@@ -84,7 +84,7 @@ class NetworkTableManager:
 
     #All variables sent from the roborio itself
     def getRobotTime(self):
-        return self.SD.getValue("RobotTime", 0)
+        return self.LC.getValue("RobotTime", 0)
 
     def isIntakeRunning(self):
         return bool(self.LC.getBoolean("Intake_Flag", 0))
