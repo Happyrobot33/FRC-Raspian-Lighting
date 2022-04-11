@@ -365,45 +365,44 @@ def ESTOP():
 toPrint = 0
 Clock = pygame.time.Clock()
 #main loop
-if __name__ == "__main__":
-    FPS_SAFE_SLEEP(1)
-    while True:
-        if not STARTUP_COMPLETE:
-            STARTUP()
-        else:
-            PREGAME()
+FPS_SAFE_SLEEP(1)
+while True:
+    if not STARTUP_COMPLETE:
+        STARTUP()
+    else:
+        PREGAME()
 
-        if NTM.isDSAttached():
-            if NTM.getRobotTime() > 100 or NTM.isAutonomous():
-                ClimbStartedFlag = False
-            if NTM.isEnabled() and NTM.isAutonomous():
-                AUTONOMOUS()
-            if NTM.isEnabled() and NTM.isTeleop():
-                TELEOP()
-            if NTM.getRobotTime() <= -1:
-                ENDGAME()
+    if NTM.isDSAttached():
+        if NTM.getRobotTime() > 100 or NTM.isAutonomous():
+            ClimbStartedFlag = False
+        if NTM.isEnabled() and NTM.isAutonomous():
+            AUTONOMOUS()
+        if NTM.isEnabled() and NTM.isTeleop():
+            TELEOP()
+        if NTM.getRobotTime() <= -1:
+            ENDGAME()
 
-        if NTM.isEStopped():
-            ESTOP()
+    if NTM.isEStopped():
+        ESTOP()
 
-        pushLEDs()
+    pushLEDs()
 
-        NTM.sendFPS(FPS)
-        FPS = Clock.get_fps()
+    NTM.sendFPS(FPS)
+    FPS = Clock.get_fps()
 
-        if toPrint == 1:
-            toPrint = 0
-            print("FPS: ", str(Clock.get_fps()) + "                                                                                               ",
-                "\nFPS Adjustment Value: ", syncWithFrameRate(1),
-                "\nNetwork Table Ip: " + str(NTM.getRemoteAddress()),
-                "\nControl Word: " + str(NTM.getFMSControlData()) + "                                                                                               ",
-                "\nBumper LED Count: " + str(BumperLEDCount),
-                "\nIntake LED Count: " + str(IntakeLEDCount),
-                "\nTotal LED Count: " + str(TotalLEDS),
-                "\nSendable Chooser: " + str(NTM.getAutonomousMode()),
-                "\nRobot Time: " + str(NTM.getRobotTime()),
-                end="\033[A\033[A\033[A\033[A\033[A\033[A\033[A\033[A\r")
-        else:
-            toPrint += 1
+    if toPrint == 1:
+        toPrint = 0
+        print("FPS: ", str(Clock.get_fps()) + "                                                                                               ",
+            "\nFPS Adjustment Value: ", syncWithFrameRate(1),
+            "\nNetwork Table Ip: " + str(NTM.getRemoteAddress()),
+            "\nControl Word: " + str(NTM.getFMSControlData()) + "                                                                                               ",
+            "\nBumper LED Count: " + str(BumperLEDCount),
+            "\nIntake LED Count: " + str(IntakeLEDCount),
+            "\nTotal LED Count: " + str(TotalLEDS),
+            "\nSendable Chooser: " + str(NTM.getAutonomousMode()),
+            "\nRobot Time: " + str(NTM.getRobotTime()),
+            end="\033[A\033[A\033[A\033[A\033[A\033[A\033[A\033[A\r")
+    else:
+        toPrint += 1
 
-        Clock.tick()
+    Clock.tick()
