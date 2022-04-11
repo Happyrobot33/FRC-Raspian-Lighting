@@ -98,7 +98,7 @@ def pushLEDs():
         time.sleep(0.001 * ((bytes // 100) + 1))
     pass
 
-StartupIncrement = 0
+StartupIncrement = -0.2
 STARTUP_COMPLETE = False
 def STARTUP():
     global StartupIncrement
