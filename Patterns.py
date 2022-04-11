@@ -1,6 +1,7 @@
 import numpy as np
 import random
 import math
+import fastnumbers
 
 def fillLEDs(LEDArray, Color1):
     for i in range(len(LEDArray)):

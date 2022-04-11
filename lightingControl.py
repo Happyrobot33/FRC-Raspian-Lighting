@@ -366,7 +366,7 @@ toPrint = 0
 Clock = pygame.time.Clock()
 #main loop
 FPS_SAFE_SLEEP(1)
-while True:
+while 1:
     if not STARTUP_COMPLETE:
         STARTUP()
     else:
