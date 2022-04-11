@@ -255,21 +255,6 @@ def correctGamma(LEDArray):
     #return the gamma corrected array
     return gammaCorrectedArray
 
-def limitRGB(rgb):
-    if rgb[0] > 255:
-        rgb[0] = 255
-    if rgb[1] > 255:
-        rgb[1] = 255
-    if rgb[2] > 255:
-        rgb[2] = 255
-    if rgb[0] < 0:
-        rgb[0] = 0
-    if rgb[1] < 0:
-        rgb[1] = 0
-    if rgb[2] < 0:
-        rgb[2] = 0
-    return rgb
-
 #define a function that takes in a LEDArray and changes the array to be closer to the desired color
 #Percentage is a float from 0 to 1
 def fadeToColor(LEDArray, Color1, percentage):
@@ -281,7 +266,6 @@ def fadeToColor(LEDArray, Color1, percentage):
         percentage = 0
     for i in range(len(LEDArray)):
         LEDArray[i] = lerpBetweenTuples(LEDArray[i], Color1, percentage)
-        #LEDArray[i] = limitRGB(LEDArray[i])
     pass
 
 #define a function that takes in a LEDArray and uses a percentage to fade between two different colors
@@ -294,7 +278,6 @@ def fadeBetweenColors(LEDArray, Color1, Color2, percentage):
         percentage = 0
     for i in range(len(LEDArray)):
         LEDArray[i] = lerpBetweenTuples(Color1, Color2, percentage)
-        #LEDArray[i] = limitRGB(LEDArray[i])
     pass
 
 def randomStars(LEDArray, color):

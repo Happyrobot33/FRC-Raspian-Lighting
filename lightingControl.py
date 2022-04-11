@@ -1,7 +1,5 @@
-from glob import glob
 import math
 import time
-from typing import Pattern
 import numpy as np
 import platform
 import pygame
@@ -82,9 +80,6 @@ def mergeLEDs(LeftBumperZone, RightBumperZone, IntakeZone):
 
 def pushLEDs():
     global pixels
-    #LeftBumperZoneGamma = Patterns.correctGamma(LeftBumperZone)
-    #RightBumperZoneGamma = Patterns.correctGamma(RightBumperZone)
-    #IntakeZoneGamma = Patterns.correctGamma(IntakeZone)
     NDpixels = mergeLEDs(LeftBumperZone, RightBumperZone, IntakeZone)
     #copy NDpixels into pixels manually
     if OnHardware:
@@ -93,11 +88,6 @@ def pushLEDs():
         pixels.show()
     else:
         #This is done to simulate the LED strip and how long it takes to update
-        #BitsPerPixel = 24
-        #MicroSecondsPerPixel = BitsPerPixel / 800000 * 1000
-        #MicroSecondsForAllPixels = len(NDpixels) * MicroSecondsPerPixel
-        #time.sleep(MicroSecondsForAllPixels / 1000 * 6)
-        
         #This code is more accurate, even though it seems more inneficient.
         #This is taken directly from the neopixel librarys calculations
         #about 100ms per 100 bytes
