@@ -354,6 +354,7 @@ def ESTOP():
 
 toPrint = 0
 Clock = pygame.time.Clock()
+withinEndGame = False
 #main loop
 FPS_SAFE_SLEEP(1)
 while 1:
@@ -369,11 +370,17 @@ while 1:
             AUTONOMOUS()
         if NTM.isEnabled() and NTM.isTeleop():
             TELEOP()
-        if NTM.getRobotTime() <= -1:
+        if NTM.getRobotTime() <= -1 and withinEndGame:
             ENDGAME()
 
     if NTM.isEStopped():
         ESTOP()
+
+    #If remaining time is less than 30 and we are enabled, declare in endgame, reset this if the time is greater than 100 and the robot is enabled
+    if NTM.getRobotTime() <= 30 and NTM.isEnabled():
+        withinEndGame = True
+    elif NTM.getRobotTime() >= 100 and NTM.isEnabled():
+        withinEndGame = False
 
     pushLEDs()
 
