@@ -111,7 +111,8 @@ class NetworkTableManager:
     def getRobotTime(self):
         if self.LC.getValue("RobotTime", 1) == 0:
             return -1
-        return round(self.LC.getValue("RobotTime", 0), 2)
+        #This is rounded because the field only sends seconds, no decimals
+        return round(self.LC.getValue("RobotTime", 0))
 
     def isIntakeRunning(self):
         return bool(self.LC.getBoolean("Intake_Flag", 0))
