@@ -370,7 +370,7 @@ while 1:
             AUTONOMOUS()
         if NTM.isEnabled() and NTM.isTeleop():
             TELEOP()
-        if NTM.getRobotTime() <= -1 and withinEndGame:
+        if NTM.getRobotTime() <= -1 and withinEndGame and NTM.isFMSAttached():
             ENDGAME()
 
     if NTM.isEStopped():
