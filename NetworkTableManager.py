@@ -35,7 +35,8 @@ class NetworkTableManager:
         self.LC.putValue('IntakeLength', IntakeLEDCount)
 
         pingInstance = threading.Thread(target=self.pingFMS)
-    
+        pingInstance.start()
+
     def roundTuple(self, tuple):
         #round each value in the tuple to the nearest integer
         return (round(tuple[0]), round(tuple[1]), round(tuple[2]))
