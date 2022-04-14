@@ -281,29 +281,25 @@ def TELEOP():
         Increment += syncWithFrameRate(5)
         #color fade to yellow
         #Patterns.fadeLEDs(IntakeZone, PURPLE, YELLOW)
-        Patterns.percentageFillLEDs(IntakeZone, YELLOW, 0.25)
+        Patterns.percentageFillLEDs(IntakeZone, YELLOW, 0.4)
         Patterns.shiftLEDs(IntakeZone, Increment)
     #Check if the intake is puking
     elif NTM.isOuttakeRunning():
         Increment += syncWithFrameRate(5)
         #color fade to purple
         #Patterns.fadeLEDs(IntakeZone, YELLOW, PURPLE)
-        Patterns.percentageFillLEDs(IntakeZone, YELLOW, 0.25)
+        Patterns.percentageFillLEDs(IntakeZone, YELLOW, 0.4)
         Patterns.shiftLEDs(IntakeZone, -Increment)
     #Check if the intake is shooting
     elif NTM.isShooterRunning():
         Increment += syncWithFrameRate(0.1)
         Patterns.fillLEDs(IntakeZone, YELLOW)
-        if Increment <= 1:
-            Patterns.fillLEDs(IntakeZone, YELLOW)
-            Patterns.percentageFillLEDs(IntakeZone, PURPLE, 1 - Increment)
-        elif Increment >= 2:
-            Patterns.fillLEDs(IntakeZone, YELLOW)
-            Patterns.percentageFillLEDs(IntakeZone, PURPLE, (Increment - 2) * 2)
+        Patterns.fillLEDs(IntakeZone, YELLOW)
+        Patterns.percentageFillLEDs(IntakeZone, PURPLE, 1 - Increment)
     #Check if the climber is running
     elif NTM.isClimberRunning() or ClimbStartedFlag:
         ClimbStartedFlag = True
-        Increment += syncWithFrameRate(10)
+        Increment += syncWithFrameRate(10 * min(NTM.getRobotTime() / 30, 1))
         
         #Slide an "ant" across the bumpers, with the current alliance color
         AllianceColor = GetAllianceColor()
@@ -319,10 +315,10 @@ def TELEOP():
     
     #check if time is below 40 seconds
     if NTM.getRobotTime() > 35 and NTM.getRobotTime() < 45:
-        if math.sin(NTM.getRobotTime() * 10) > 0:
-            Patterns.fillLEDs(LeftBumperZone, YELLOW)
-            Patterns.fillLEDs(RightBumperZone, YELLOW)
-            Patterns.fillLEDs(IntakeZone, YELLOW)
+        if math.sin(NTM.getRobotTime() * 70) > 0:
+            Patterns.fillLEDs(LeftBumperZone, GetAllianceColor())
+            Patterns.fillLEDs(RightBumperZone, GetAllianceColor())
+            Patterns.fillLEDs(IntakeZone, GetAllianceColor())
         else:
             Patterns.fillLEDs(LeftBumperZone, PURPLE)
             Patterns.fillLEDs(RightBumperZone, PURPLE)
