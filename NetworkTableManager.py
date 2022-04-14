@@ -1,10 +1,16 @@
 from tokenize import String
 from networktables import NetworkTables
 import logging
+import os
+import platform
+import subprocess
+import threading
+import time
 
 import networktables
 
 class NetworkTableManager:
+    FMSIPACCESIBLE = False
     def __init__(self, BumperLEDCount, IntakeLEDCount, ipAddress = "10.36.67.2"):
         # Setup networktables and logging
         #logging.basicConfig(level=logging.DEBUG)
@@ -27,6 +33,8 @@ class NetworkTableManager:
         #add the LED counts to the network table
         self.LC.putValue('BumperLength', BumperLEDCount)
         self.LC.putValue('IntakeLength', IntakeLEDCount)
+
+        pingInstance = threading.Thread(target=self.pingFMS)
     
     def roundTuple(self, tuple):
         #round each value in the tuple to the nearest integer
@@ -57,6 +65,22 @@ class NetworkTableManager:
 
     def isFMSAttached(self):
         return bool(self.getFMSData() & 0b00010000)
+
+    def pingFMS(self):
+        FMSIP = "10.0.100.5"
+        #Check if the FMS IP Address is reachable
+        # Option for the number of packets as a function of
+        param = '-n' if platform.system().lower()=='windows' else '-c'
+
+        # Building the command. Ex: "ping -c 1 google.com"
+        command = ['ping', param, '1', FMSIP]
+
+        while True:
+            self.FMSIPACCESIBLE = subprocess.call(command) == 0
+            time.sleep(1)
+
+    def isFMSIPReachable(self):
+        return self.FMSIPACCESIBLE
 
     def getFMSControlData(self):
         return self.getFMSData()

@@ -394,7 +394,8 @@ while 1:
             "\nTotal LED Count: " + str(TotalLEDS),
             "\nSendable Chooser: " + str(NTM.getAutonomousMode()),
             "\nRobot Time: " + str(NTM.getRobotTime()),
-            end="\033[A\033[A\033[A\033[A\033[A\033[A\033[A\033[A\r")
+            "\nFMSIP Reachable: " + str(NTM.isFMSIPReachable()),
+            end="\033[A\033[A\033[A\033[A\033[A\033[A\033[A\033[A\033[A\r")
     else:
         toPrint += 1
 
