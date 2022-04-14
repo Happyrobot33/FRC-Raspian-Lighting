@@ -52,7 +52,7 @@ class NetworkTableManager:
         pass
 
     def sendFPS(self, FPS):
-        self.LC.putNumber("FPS", FPS)
+        self.LC.putNumber("FPS", round(FPS, 1))
 
     def getRemoteAddress(self):
         return NetworkTables.getRemoteAddress()
@@ -111,7 +111,7 @@ class NetworkTableManager:
     def getRobotTime(self):
         if self.LC.getValue("RobotTime", 1) == 0:
             return -1
-        return self.LC.getValue("RobotTime", 0)
+        return round(self.LC.getValue("RobotTime", 0), 2)
 
     def isIntakeRunning(self):
         return bool(self.LC.getBoolean("Intake_Flag", 0))

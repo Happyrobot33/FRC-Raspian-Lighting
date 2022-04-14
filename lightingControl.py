@@ -315,7 +315,7 @@ def TELEOP():
     
     #check if time is below 40 seconds
     if NTM.getRobotTime() > 35 and NTM.getRobotTime() < 45:
-        if math.sin(NTM.getRobotTime() * 70) > 0:
+        if math.sin(NTM.getRobotTime() * 3.14 * 4) > 0:
             Patterns.fillLEDs(LeftBumperZone, GetAllianceColor())
             Patterns.fillLEDs(RightBumperZone, GetAllianceColor())
             Patterns.fillLEDs(IntakeZone, GetAllianceColor())
