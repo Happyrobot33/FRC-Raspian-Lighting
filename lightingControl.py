@@ -299,14 +299,14 @@ def TELEOP():
     #Check if the climber is running
     elif NTM.isClimberRunning() or ClimbStartedFlag:
         ClimbStartedFlag = True
-        Increment += syncWithFrameRate(10 * min(NTM.getRobotTime() / 30, 1))
+        Increment += syncWithFrameRate(10)
         
         #Slide an "ant" across the bumpers, with the current alliance color
         AllianceColor = GetAllianceColor()
         Patterns.segmentedColor(LeftBumperZone, [AllianceColor, YELLOW, AllianceColor], 1)
-        Patterns.shiftLEDs(LeftBumperZone, Increment / 2)
+        Patterns.shiftLEDs(LeftBumperZone, Increment / 1.5)
         Patterns.segmentedColor(RightBumperZone, [AllianceColor, YELLOW, AllianceColor], 1)
-        Patterns.shiftLEDs(RightBumperZone, -Increment / 2)
+        Patterns.shiftLEDs(RightBumperZone, -Increment / 1.5)
 
         Patterns.segmentedColor(IntakeZone, [PURPLE, YELLOW, PURPLE], 1)
         Patterns.shiftLEDs(IntakeZone, math.sin(Increment / 40) * 17)
