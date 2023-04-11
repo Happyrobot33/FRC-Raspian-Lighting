@@ -36,6 +36,8 @@ if OnHardware:
     import board
     import neopixel
 
+#This is a hardcoded boolean that allows the climber animation to reset if the climber is brought all the way down
+ResettableClimb = True
 
 #Front / Back beam count = 9
 #Side Beam Count = 42
@@ -367,6 +369,8 @@ while 1:
             TELEOP()
         if NTM.getRobotTime() <= -1 and withinEndGame and NTM.isFMSAttached():
             ENDGAME()
+        if ResettableClimb and not NTM.isClimberRunning():
+            ClimbStartedFlag = False
 
     if NTM.isEStopped():
         ESTOP()
